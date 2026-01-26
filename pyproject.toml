@@ -1,0 +1,31 @@
+[project.optional-dependencies]
+# Minimal install: core only
+core = []
+
+# Full install: all features
+full = [
+    "numpy>=1.20.0",
+    "scipy>=1.7.0",
+    "matplotlib>=3.4.0",
+    "GPy>=1.10.0",
+    "emukit>=0.4.0",
+]
+
+# Development
+dev = [
+    "gpdiagnostics[full]",
+    "pytest>=7.0",
+    "pytest-cov",
+    "black>=23.0",
+    "mypy>=1.0",
+    "pre-commit",
+    "isort",
+]
+
+# Documentation
+docs = [
+    "sphinx>=5.0",
+    "sphinx-rtd-theme",
+    "nbsphinx",
+    "myst-parser",
+]
