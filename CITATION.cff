@@ -5,8 +5,8 @@ type: software
 authors:
   - given-names: Angad
     family-names: Kumar
-repository-code: "https://github.com/yourusername/gpdiagnostics"
-url: "https://github.com/yourusername/gpdiagnostics"
+repository-code: "https://github.com/AngadKumar16/gpdiagnostics"
+url: "https://github.com/AngadKumar16/gpdiagnostics"
 license: BSD-3-Clause
 version: 0.1.0
 date-released: 2026-01-26
@@ -23,4 +23,4 @@ preferred-citation:
       family-names: Kumar
   title: "GPDiagnostics: Gaussian Process Interpretability Toolkit"
   year: 2026
-  url: "https://github.com/yourusername/gpdiagnostics"
+  url: "https://github.com/AngadKumar16/gpdiagnostics"
