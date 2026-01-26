@@ -1,9 +1,34 @@
-[project.optional-dependencies]
-# Minimal install: core only
-core = []
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
-# Full install: all features
-full = [
+[project]
+name = "gpdiagnostics"
+version = "0.1.0"
+description = "Interpretability and Diagnostics Tools for Gaussian Processes"
+readme = "README.md"
+license = {file = "LICENSE"}
+authors = [
+    {name = "Your Name", email = "your.email@example.com"},
+]
+keywords = ["gaussian-process", "machine-learning", "interpretability", "uncertainty"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+requires-python = ">=3.8"
+
+# ✅ CORE DEPENDENCIES: Required for the library to function
+# These are installed automatically with: pip install gpdiagnostics
+dependencies = [
     "numpy>=1.20.0",
     "scipy>=1.7.0",
     "matplotlib>=3.4.0",
@@ -11,21 +36,44 @@ full = [
     "emukit>=0.4.0",
 ]
 
-# Development
+[project.optional-dependencies]
+# ✅ DEVELOPMENT: Only needed for contributors
+# Install with: pip install -e ".[dev]"
 dev = [
-    "gpdiagnostics[full]",
     "pytest>=7.0",
-    "pytest-cov",
+    "pytest-cov>=4.0",
     "black>=23.0",
     "mypy>=1.0",
-    "pre-commit",
-    "isort",
+    "pre-commit>=3.0",
+    "isort>=5.12",
 ]
 
-# Documentation
+# ✅ DOCUMENTATION: Only needed for building docs  
+# Install with: pip install -e ".[docs]"
 docs = [
     "sphinx>=5.0",
-    "sphinx-rtd-theme",
-    "nbsphinx",
-    "myst-parser",
+    "sphinx-rtd-theme>=1.2",
+    "nbsphinx>=0.9",
+    "myst-parser>=1.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/yourusername/gpdiagnostics"
+Issues = "https://github.com/yourusername/gpdiagnostics/issues"
+Documentation = "https://gpdiagnostics.readthedocs.io"
+
+[tool.hatch.build.targets.wheel]
+packages = ["gpdiagnostics"]
+
+[tool.black]
+line-length = 88
+target-version = ['py38']
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--cov=gpdiagnostics --cov-report=html"
