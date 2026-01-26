@@ -1,0 +1,10 @@
+## Citation
+
+If you use GPDiagnostics in research, please cite:
+
+@software{gpdiagnostics2026,
+  title={GPDiagnostics: Gaussian Process Interpretability Toolkit},
+  author={Angad Kumar},
+  year={2026},
+  url={https://github.com/AngadKumar16/gpdiagnostics}
+}
