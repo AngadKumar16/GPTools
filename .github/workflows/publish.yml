@@ -7,43 +7,46 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    
+
     environment:
       name: pypi
-      url: https://pypi.org/p/gpdiagnostics
-    
+      url: https://pypi.org/project/gpdiagnostics
+
     permissions:
-      id-token: write  # IMPORTANT: for trusted publishing
-    
+      contents: read          # Needed to checkout repo
+      id-token: write         # For trusted publishing
+
     steps:
-    - name: Checkout code
- uses: actions/checkout@v3
-    
+    - name: Checkout repository
+      uses: actions/checkout@v4  # v4 is latest stable
+
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: "3.10"
-    
+
     - name: Install build dependencies
       run: |
-        python -m pip install --upgrade pip
+        python -m pip install --upgrade pip setuptools wheel
         pip install build twine
-    
-    - name: Build package
+
+    - name: Build source and wheel distributions
       run: |
         python -m build
-    
-    - name: Check package with Twine
+
+    - name: Validate package
       run: |
         twine check dist/*
-    
+
     - name: Publish package to PyPI
       uses: pypa/gh-action-pypi-publish@v1.8.7
       with:
         verbose: true
-    
+        user: __token__         # Must set in GitHub Secrets
+        password: ${{ secrets.PYPI_API_TOKEN }}
+
     - name: Upload release artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: dist-files
         path: dist/
