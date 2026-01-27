@@ -29,16 +29,25 @@ try:
     # Core interpretability modules
     from .data_influence import DataInfluenceMap
     from .hyperparam_tracker import HyperparameterTracker
-    from .kernel_summary import (format_kernel_tree, interpret_lengthscale,
-                                 interpret_variance, summarize_kernel)
-    from .model_complexity import (compute_complexity_score,
-                                   compute_noise_ratio,
-                                   compute_roughness_score,
-                                   count_kernel_components)
+    from .kernel_summary import (
+        format_kernel_tree,
+        interpret_lengthscale,
+        interpret_variance,
+        summarize_kernel,
+    )
+    from .model_complexity import (
+        compute_complexity_score,
+        compute_noise_ratio,
+        compute_roughness_score,
+        count_kernel_components,
+    )
     from .uncertainty_analysis import UncertaintyProfiler
-    # Utility functions (safe to expose)
-    from .utils import (check_model_health, extract_kernel_params_flat,
-                        get_lengthscale, get_noise_variance)
+    from .utils import (
+        check_model_health,
+        extract_kernel_params_flat,
+        get_lengthscale,
+        get_noise_variance,
+    )
 
     # Flag indicating successful import of all features
     _FULL_IMPORT_SUCCESS = True
