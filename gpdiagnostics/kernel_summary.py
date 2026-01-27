@@ -34,7 +34,7 @@ def extract_kernel_params(kern: GPy.kern.Kern) -> Dict[str, float]:
     for param in kern.parameters:
         # Get raw value before transformation
         if hasattr(param, 'values'):
-            values = param.values
+            values = param.param_array
             if hasattr(values, '__iter__') and not isinstance(values, str):
                 params[param.name] = [float(v) for v in values]
             else:
