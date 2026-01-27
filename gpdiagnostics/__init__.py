@@ -35,11 +35,21 @@ try:
     )
     from .uncertainty_analysis import UncertaintyProfiler
     from .hyperparam_tracker import HyperparameterTracker
-    from .model_complexity import compute_complexity_score, count_kernel_components
+    from .model_complexity import (
+        compute_complexity_score, 
+        count_kernel_components,
+        compute_roughness_score,
+        compute_noise_ratio
+    )
     from .data_influence import DataInfluenceMap
     
     # Utility functions (safe to expose)
-    from .utils import get_lengthscale, get_noise_variance, extract_kernel_params_flat
+    from .utils import (
+        get_lengthscale, 
+        get_noise_variance, 
+        extract_kernel_params_flat,
+        check_model_health
+    )
     
     # Flag indicating successful import of all features
     _FULL_IMPORT_SUCCESS = True
@@ -67,10 +77,13 @@ except ImportError as e:  # pragma: no cover
     HyperparameterTracker = None
     compute_complexity_score = None
     count_kernel_components = None
+    compute_roughness_score = None
+    compute_noise_ratio = None
     DataInfluenceMap = None
     get_lengthscale = None
     get_noise_variance = None
     extract_kernel_params_flat = None
+    check_model_health = None
 
 
 # Explicit public API declaration
@@ -93,6 +106,8 @@ __all__ = [
     # Model Complexity
     "compute_complexity_score",
     "count_kernel_components",
+    "compute_roughness_score",
+    "compute_noise_ratio",
     
     # Data Influence
     "DataInfluenceMap",
@@ -101,6 +116,7 @@ __all__ = [
     "get_lengthscale",
     "get_noise_variance",
     "extract_kernel_params_flat",
+    "check_model_health",
 ]
 
 # Package metadata
