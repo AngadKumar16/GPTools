@@ -50,5 +50,5 @@ class TestKernelSummary:
     def test_format_kernel_tree(self, composite_gp):
         """Test kernel tree formatting."""
         tree_str = gpdiagnostics.format_kernel_tree(composite_gp)
-        assert "RBF" in tree_str
-        assert "White" in tree_str
+        assert "rbf" in tree_str
+        assert "white" in tree_str
