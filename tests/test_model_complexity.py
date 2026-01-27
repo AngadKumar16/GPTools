@@ -3,6 +3,8 @@ Tests for model complexity scoring.
 """
 
 import pytest
+import GPy
+import numpy as np
 import gpdiagnostics
 
 class TestModelComplexity:
