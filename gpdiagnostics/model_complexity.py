@@ -39,7 +39,7 @@ def compute_roughness_score(kern: GPy.kern.Kern) -> float:
             for part in k.parts:
                 traverse(part)
         elif hasattr(k, 'lengthscale'):
-            ls = k.lengthscale.values
+            ls = k.lengthscale
             ls_mean = np.mean(ls) if hasattr(ls, '__iter__') else ls
             roughness += 1.0 / (ls_mean + 1e-10)
             count += 1
