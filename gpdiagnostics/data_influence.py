@@ -6,6 +6,7 @@ import numpy as np
 from typing import Dict, Any, Tuple
 import GPy
 from scipy.linalg import solve_triangular
+import matplotlib.pyplot as plt
 
 class DataInfluenceMap:
     """
