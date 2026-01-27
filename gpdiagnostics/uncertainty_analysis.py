@@ -2,10 +2,16 @@
 Uncertainty profiling and analysis for Gaussian Process models.
 """
 
+from __future__ import annotations  # ✅ Postponed evaluation of annotations
+
 import numpy as np
-import matplotlib.pyplot as plt
-from typing import Tuple, Optional, Dict, Any
+from typing import Tuple, Optional, Dict, Any, TYPE_CHECKING
 import GPy
+
+# ✅ Only import for type checking, not at runtime
+if TYPE_CHECKING:
+    import matplotlib.pyplot as plt
+
 
 class UncertaintyProfiler:
     """
@@ -84,10 +90,10 @@ class UncertaintyProfiler:
         X_test: np.ndarray,
         X_train: Optional[np.ndarray] = None,
         y_train: Optional[np.ndarray] = None,
-        ax: Optional[plt.Axes] = None,
+        ax: Optional["plt.Axes"] = None,  # ✅ String annotation
         confidence_level: float = 2.0,
         **plot_kwargs
-    ) -> plt.Axes:
+    ) -> "plt.Axes":  # ✅ String annotation
         """
         Plot uncertainty profile with optional training data overlay.
         
@@ -101,7 +107,19 @@ class UncertaintyProfiler:
             
         Returns:
             Matplotlib axes object
+            
+        Raises:
+            ImportError: If matplotlib is not installed
         """
+        # ✅ Lazy import with helpful error message
+        try:
+            import matplotlib.pyplot as plt
+        except ImportError as e:
+            raise ImportError(
+                "plot requires matplotlib. "
+                "Install with: pip install matplotlib"
+            ) from e
+        
         if ax is None:
             fig, ax = plt.subplots(figsize=(10, 6))
         
