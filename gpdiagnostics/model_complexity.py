@@ -58,8 +58,8 @@ def compute_noise_ratio(model: GPy.models.GPRegression) -> float:
         SNR = signal_variance / noise_variance
     """
     try:
-        signal_var = model.kern.variance.values
-        noise_var = model.likelihood.variance.values
+        signal_var = float(model.kern.variance)
+        noise_var = float(model.Gaussian_noise.variance)
         return float(signal_var / (noise_var + 1e-10))
     except:
         return 1.0
@@ -88,7 +88,7 @@ def compute_complexity_score(
     # Effective degrees of freedom (approximation)
     try:
         K = model.kern.K(X, X)
-        noise_var = np.exp(model.likelihood.log_variance)
+        noise_var = float(model.Gaussian_noise.variance)
         trace_K = np.trace(K)
         trace_ratio = trace_K / (trace_K + noise_var * X.shape[0])
         effective_dof = trace_ratio * X.shape[0]
