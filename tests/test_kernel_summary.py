@@ -3,6 +3,8 @@ Tests for kernel summary and interpretation.
 """
 
 import pytest
+import GPy
+import numpy as np
 import gpdiagnostics
 
 class TestKernelSummary:
