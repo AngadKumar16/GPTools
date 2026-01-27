@@ -130,12 +130,12 @@ def summarize_kernel(
             }
             
             if hasattr(kern, 'lengthscale'):
-                ls = kern.lengthscale.values
+                ls = kern.lengthscale
                 comp["params"]["lengthscale"] = ls.tolist() if hasattr(ls, '__iter__') else float(ls)
                 comp["interpretation"]["smoothness"] = interpret_lengthscale(ls)
             
             if hasattr(kern, 'variance'):
-                var = float(kern.variance.values)
+                var = float(kern.variance)
                 comp["params"]["variance"] = var
                 is_noise = "White" in kern.name or "Noise" in kern.name
                 comp["interpretation"]["strength"] = interpret_variance(
