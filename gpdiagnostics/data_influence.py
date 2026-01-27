@@ -47,7 +47,7 @@ class DataInfluenceMap:
         """
         # Compute covariance matrix
         K = self.model.kern.K(X_train, X_train)
-        noise_var = np.exp(self.model.likelihood.log_variance)
+        noise_var = float(self.model.Gaussian_noise.variance)
         K_stable = K + np.eye(K.shape[0]) * noise_var
         
         # Cholesky decomposition
@@ -96,7 +96,7 @@ class DataInfluenceMap:
         
         # Pre-compute full covariance for efficiency
         K_full = self.model.kern.K(X_train, X_train)
-        noise_var = np.exp(self.model.likelihood.log_variance)
+        noise_var = float(self.model.Gaussian_noise.variance)
         np.fill_diagonal(K_full, np.diag(K_full) + noise_var)
         
         for i in range(n):
