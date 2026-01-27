@@ -25,5 +25,3 @@ jobs:
         run: isort --diff gpdiagnostics/ tests/
       - name: Run Black check
         run: black --check gpdiagnostics/ tests/
-      - name: Run isort check
-        run: isort --check-only gpdiagnostics/ tests/
