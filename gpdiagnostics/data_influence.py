@@ -2,8 +2,7 @@
 Data influence analysis: quantify how training points affect model uncertainty.
 """
 
-from __future__ import \
-    annotations  # ✅ Step 1: Postponed evaluation of annotations
+from __future__ import annotations #Postponed evaluation of annotations
 
 from typing import TYPE_CHECKING, Any, Dict, Tuple
 
