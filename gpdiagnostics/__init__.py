@@ -27,47 +27,36 @@ from ._version import __version__
 
 try:
     # Core interpretability modules
-    from .kernel_summary import (
-        summarize_kernel,
-        format_kernel_tree,
-        interpret_lengthscale,
-        interpret_variance,
-    )
-    from .uncertainty_analysis import UncertaintyProfiler
-    from .hyperparam_tracker import HyperparameterTracker
-    from .model_complexity import (
-        compute_complexity_score, 
-        count_kernel_components,
-        compute_roughness_score,
-        compute_noise_ratio
-    )
     from .data_influence import DataInfluenceMap
-    
+    from .hyperparam_tracker import HyperparameterTracker
+    from .kernel_summary import (format_kernel_tree, interpret_lengthscale,
+                                 interpret_variance, summarize_kernel)
+    from .model_complexity import (compute_complexity_score,
+                                   compute_noise_ratio,
+                                   compute_roughness_score,
+                                   count_kernel_components)
+    from .uncertainty_analysis import UncertaintyProfiler
     # Utility functions (safe to expose)
-    from .utils import (
-        get_lengthscale, 
-        get_noise_variance, 
-        extract_kernel_params_flat,
-        check_model_health
-    )
-    
+    from .utils import (check_model_health, extract_kernel_params_flat,
+                        get_lengthscale, get_noise_variance)
+
     # Flag indicating successful import of all features
     _FULL_IMPORT_SUCCESS = True
-    
+
 except ImportError as e:  # pragma: no cover
     # Graceful degradation for minimal installs
     import warnings
-    
+
     _FULL_IMPORT_SUCCESS = False
     _IMPORT_ERROR = str(e)
-    
+
     warnings.warn(
         f"GPDiagnostics: Some features unavailable due to missing dependency: {e}\n"
         "Install with 'pip install gpdiagnostics[full]' for complete functionality.",
         ImportWarning,
         stacklevel=2,
     )
-    
+
     # Define stubs to prevent NameError
     summarize_kernel = None
     format_kernel_tree = None
@@ -90,28 +79,22 @@ except ImportError as e:  # pragma: no cover
 __all__ = [
     # Version
     "__version__",
-    
     # Kernel Summary
     "summarize_kernel",
     "format_kernel_tree",
     "interpret_lengthscale",
     "interpret_variance",
-    
     # Uncertainty Analysis
     "UncertaintyProfiler",
-    
     # Hyperparameter Tracking
     "HyperparameterTracker",
-    
     # Model Complexity
     "compute_complexity_score",
     "count_kernel_components",
     "compute_roughness_score",
     "compute_noise_ratio",
-    
     # Data Influence
     "DataInfluenceMap",
-    
     # Utilities
     "get_lengthscale",
     "get_noise_variance",
