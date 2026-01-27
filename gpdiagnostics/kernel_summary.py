@@ -181,19 +181,13 @@ def _print_kernel_summary(interpretation: Dict[str, Any]):
 
 def format_kernel_tree(model: GPy.models.GPRegression) -> str:
     """
-    Pretty-print kernel tree structure.
-    
-    Args:
-        model: Trained GPy model
-        
-    Returns:
-        Formatted string representation
+    Pretty-print kernel tree structure using the original kernel names.
     """
     structure = get_kernel_structure(model.kern)
     
     def format_node(node, indent=0):
         if isinstance(node, list):
             return "\n".join(format_node(n, indent + 2) for n in node)
-        return " " * indent + f"└─ {node.upper()}"
+        return " " * indent + f"└─ {node}"  # use the name as it comes in (do not update names)
     
     return format_node(structure)
