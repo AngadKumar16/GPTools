@@ -194,6 +194,6 @@ def format_kernel_tree(model: GPy.models.GPRegression) -> str:
     def format_node(node, indent=0):
         if isinstance(node, list):
             return "\n".join(format_node(n, indent + 2) for n in node)
-        return " " * indent + f"└─ {node}"
+        return " " * indent + f"└─ {node.upper()}"
     
     return format_node(structure)
