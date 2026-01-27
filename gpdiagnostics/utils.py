@@ -18,7 +18,7 @@ def get_lengthscale(model: GPy.models.GPRegression) -> Optional[Union[float, np.
     """
     try:
         if hasattr(model.kern, 'lengthscale'):
-            ls = model.kern.lengthscale.values
+            ls = model.kern.lengthscale
             return ls if hasattr(ls, '__iter__') else float(ls)
     except Exception:
         return None
@@ -35,7 +35,7 @@ def get_noise_variance(model: GPy.models.GPRegression) -> Optional[float]:
         Noise variance or None if not found
     """
     try:
-        return float(model.likelihood.variance.values)
+        return float(model.Gaussian_noise.variance)
     except Exception:
         return None
 
@@ -53,12 +53,12 @@ def extract_kernel_params_flat(model: GPy.models.GPRegression) -> Dict[str, floa
     """
     params = {}
     for param in model.parameters:
-        val = param.values
-        if hasattr(val, '__iter__') and len(val) == 1:
-            params[param.name] = float(val[0])
-        elif hasattr(val, '__iter__'):
+        val = param.param_array
+        if hasattr(val, '__iter__') and len(val) > 1:
             for i, v in enumerate(val):
                 params[f"{param.name}_{i}"] = float(v)
+        elif hasattr(val, '__iter__'):
+            params[param.name] = float(val[0])
         else:
             params[param.name] = float(val)
     return params
@@ -75,7 +75,7 @@ def check_model_health(model: GPy.models.GPRegression) -> Dict[str, bool]:
     """
     try:
         # Check for NaN parameters
-        nan_params = any(np.any(np.isnan(p.values)) for p in model.parameters)
+        nan_params = any(np.any(np.isnan(p.param_array)) for p in model.parameters)
         
         # Check noise variance is reasonable
         noise_ok = True
@@ -86,7 +86,7 @@ def check_model_health(model: GPy.models.GPRegression) -> Dict[str, bool]:
         # Check kernel variance
         kern_var_ok = True
         if hasattr(model.kern, 'variance'):
-            kv = model.kern.variance.values
+            kv = float(model.kern.variance)
             kern_var_ok = kv > 0 and kv < 1e6
         
         return {
