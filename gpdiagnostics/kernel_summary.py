@@ -144,7 +144,7 @@ def summarize_kernel(
                 )
             
             if hasattr(kern, 'periodicity'):
-                comp["params"]["periodicity"] = float(kern.periodicity.values)
+                comp["params"]["periodicity"] = float(kern.periodicity)
                 comp["interpretation"]["pattern"] = f"Periodic with period {kern.periodicity.values:.2f}"
             
             interpretation["components"].append(comp)
