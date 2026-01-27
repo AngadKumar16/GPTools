@@ -3,8 +3,9 @@ Tests for hyperparameter tracking.
 """
 
 import pytest
-import gpdiagnostics
+import GPy
 import numpy as np
+import gpdiagnostics
 
 class TestHyperparameterTracker:
     def test_tracker_initialization(self, simple_gp):
