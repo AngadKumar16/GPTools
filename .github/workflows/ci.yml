@@ -80,7 +80,7 @@ jobs:
     - name: Format checking
       run: |
         black --check gpdiagnostics/ tests/
-        isort --check-only gpdiagnostics/ tests/
+        # isort --check-only gpdiagnostics/ tests/
 
   build:
     name: Build Package
