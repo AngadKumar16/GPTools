@@ -3,13 +3,13 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "gpdiagnostics"
+name = "gpdiag"
 version = "0.1.0"
 description = "Interpretability and Diagnostics Tools for Gaussian Processes"
 readme = "README.md"
 license = {file = "LICENSE"}
 authors = [
-    {name = "Your Name", email = "your.email@example.com"},
+    {name = "Angad Kumar", email = "angadkumar16ak@gmail.com"},
 ]
 keywords = ["gaussian-process", "machine-learning", "interpretability", "uncertainty"]
 classifiers = [
