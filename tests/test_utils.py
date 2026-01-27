@@ -3,8 +3,9 @@ Tests for utility functions.
 """
 
 import pytest
-import gpdiagnostics
+import GPy
 import numpy as np
+import gpdiagnostics
 
 class TestUtils:
     def test_get_lengthscale(self, simple_gp):
