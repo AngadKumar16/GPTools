@@ -2,11 +2,18 @@
 Data influence analysis: quantify how training points affect model uncertainty.
 """
 
+from __future__ import annotations  # ✅ Step 1: Postponed evaluation of annotations
+
 import numpy as np
-from typing import Dict, Any, Tuple
+from typing import Dict, Any, Tuple, TYPE_CHECKING
 import GPy
 from scipy.linalg import solve_triangular
-import matplotlib.pyplot as plt
+
+# ✅ Step 2: No top-level matplotlib import
+# Only import for type checking during development, not at runtime
+if TYPE_CHECKING:
+    import matplotlib.pyplot as plt
+
 
 class DataInfluenceMap:
     """
@@ -125,9 +132,9 @@ class DataInfluenceMap:
         self, 
         X_train: np.ndarray, 
         influence_scores: np.ndarray,
-        ax=None,
+        ax: "plt.Axes" = None,  # ✅ Step 3: String annotation
         **scatter_kwargs
-    ) -> plt.Axes:
+    ) -> "plt.Axes":  # ✅ Step 3: String annotation
         """
         Visualize data point influence.
         
@@ -139,12 +146,25 @@ class DataInfluenceMap:
             
         Returns:
             Matplotlib axes object
+            
+        Raises:
+            ImportError: If matplotlib is not installed
         """
+        # ✅ Step 4: Import matplotlib inside function with helpful error
+        try:
+            import matplotlib.pyplot as plt
+        except ImportError as e:
+            raise ImportError(
+                "plot_influence requires matplotlib. "
+                "Install with: pip install matplotlib"
+            ) from e
+        
         if ax is None:
             fig, ax = plt.subplots(figsize=(10, 6))
         
-        # Normalize scores for visual size
-        sizes = 100 + (influence_scores / np.max(influence_scores)) * 400
+        # ✅ Step 5: Fix division by zero
+        max_score = np.max(influence_scores) + 1e-12  # Prevent div by zero
+        sizes = 100 + (influence_scores / max_score) * 400
         
         scatter = ax.scatter(
             X_train.flatten(), 
