@@ -33,10 +33,11 @@ class HyperparameterTracker:
             if name not in self.history:
                 self.history[name] = []
             
-            val = param.values
-            if hasattr(val, '__iter__'):
-                # Handle vector parameters (e.g., ARD lengthscales)
+            val = param.param_array
+            if hasattr(val, '__iter__') and len(val) > 1:
                 self.history[name].append(val.copy())
+            elif hasattr(val, '__iter__'):
+                self.history[name].append(float(val[0]))
             else:
                 self.history[name].append(float(val))
     
