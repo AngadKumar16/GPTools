@@ -3,6 +3,7 @@ Tests for uncertainty profiling.
 """
 
 import pytest
+import GPy
 import numpy as np
 import gpdiagnostics
 
