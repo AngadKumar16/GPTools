@@ -10,7 +10,7 @@ jobs:
 
     environment:
       name: pypi
-      url: https://pypi.org/project/gpdiagnostics
+      url: https://pypi.org/project/gpclarity
 
     permissions:
       contents: read          # Needed to checkout repo

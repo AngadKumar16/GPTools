@@ -54,7 +54,7 @@ docs = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/yourusername/gpclarity"
+Homepage = "https://github.com/AngadKumar16/gpclarity"
 Issues = "https://github.com/yourusername/gpclarity/issues"
 Documentation = "https://gpclarity.readthedocs.io"
 

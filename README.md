@@ -1,8 +1,7 @@
 # GPClarity: Gaussian Process Interpretability Toolkit
-
 ![Python Version](https://img.shields.io/python/v/gpclarity)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Build Status](https://github.com/yourusername/gpclarity/workflows/CI/badge.svg)
+![Build Status](https://github.com/AngadKumar16/gpclarity/workflows/CI/badge.svg)
 
 **GPClarity** is a production-ready library that transforms black-box Gaussian Process models into interpretable, debuggable, and trustworthy tools. Built on GPy and emukit, it provides human-readable insights into kernel behavior, uncertainty patterns, and model complexity.
 
@@ -59,7 +58,7 @@ pip install gpclarity
 
 ### Development Version
 ```bash
-git clone https://github.com/yourusername/gpclarity.git
+git clone https://github.com/AngadKumar16/gpclarity.git
 cd gpclarity
 pip install -e ".[dev]"
 ```
@@ -143,23 +142,31 @@ Components: 2
 ## 🎓 Citation
 
 ```bibtex
-@software{gpclarity2024,
+@software{gpclarity2026,
   title={gpclarity: Gaussian Process Interpretability Toolkit},
-  author={Your Name},
-  year={2024},
-  url={https://github.com/yourusername/gpclarity},
+  author={Angad Kumar},
+  year={2026},
+  url={https://github.com/AngadKumar16/gpclarity},
   version={0.1.0}
 }
 ```
+## 📝 License
 
----
+GPClarity is licensed under the **MIT License**. See [LICENSE](LICENSE) for details.
 
 ## 🤝 Contributing
 
-We welcome contributions! Please see CONTRIBUTING.md.
+Contributions are welcome!  
 
----
+- Report bugs or request features via [GitHub Issues](https://github.com/AngadKumar16/gpclarity/issues)
+- Submit pull requests for fixes or enhancements
+- Make sure to follow the code style and write tests for new features
 
-## 📄 License
+**Author:** Angad Kumar ([GitHub](https://github.com/AngadKumar16), [Email](mailto:angadkumar16ak@gmail.com))
 
-MIT License - see LICENSE file for details.
+## 🛣️ Roadmap
+
+- Conda package support
+- More visualization tools for kernel decomposition
+- Automated tutorials / example notebooks
+- More features overall
