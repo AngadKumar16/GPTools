@@ -63,7 +63,7 @@ jobs:
     - name: Run test suite
       run: |
         pytest tests/ \
-          --cov=gpdiagnostics \
+          --cov=gptools \
           --cov-report=xml \
           -v
 
@@ -75,12 +75,12 @@ jobs:
 
     - name: Type checking
       continue-on-error: true
-      run: mypy gpdiagnostics/ --ignore-missing-imports
+      run: mypy gptools/ --ignore-missing-imports
 
     - name: Format checking
       run: |
-        black --check gpdiagnostics/ tests/
-        # isort --check-only gpdiagnostics/ tests/
+        black --check gptools/ tests/
+        # isort --check-only gptools/ tests/
 
   build:
     name: Build Package
@@ -132,4 +132,4 @@ jobs:
     
     - name: Verify
       run: |
-        python -c "import gpdiagnostics; print(gpdiagnostics.__version__)"
+        python -c "import gptools; print(gptools.__version__)"
