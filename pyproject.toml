@@ -23,10 +23,9 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
-requires-python = ">=3.9,<3.13"
+requires-python = ">=3.9"
 
-# ✅ CORE DEPENDENCIES: Required for the library to function
-# These are installed automatically with: pip install gpdiagnostics
+# These are installed automatically with: pip install gptools
 dependencies = [
     "numpy>=1.20.0",
     "scipy>=1.7.0",
@@ -36,7 +35,6 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-# ✅ DEVELOPMENT: Only needed for contributors
 # Install with: pip install -e ".[dev]"
 dev = [
     "pytest>=7.0",
@@ -47,7 +45,6 @@ dev = [
     "isort>=5.12",
 ]
 
-# ✅ DOCUMENTATION: Only needed for building docs  
 # Install with: pip install -e ".[docs]"
 docs = [
     "sphinx>=5.0",
@@ -57,16 +54,16 @@ docs = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/yourusername/gpdiagnostics"
-Issues = "https://github.com/yourusername/gpdiagnostics/issues"
-Documentation = "https://gpdiagnostics.readthedocs.io"
+Homepage = "https://github.com/yourusername/gptools"
+Issues = "https://github.com/yourusername/gptools/issues"
+Documentation = "https://gptools.readthedocs.io"
 
 [tool.hatch.build.targets.wheel]
-packages = ["gpdiagnostics"]
+packages = ["gptools"]
 
 [tool.black]
 line-length = 88
-target-version = ['py38']
+target-version = ['py39', 'py310', 'py311', 'py312']
 
 [tool.mypy]
 python_version = "3.9"
@@ -75,4 +72,4 @@ warn_unused_configs = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "--cov=gpdiagnostics --cov-report=html"
+addopts = "--cov=gptools --cov-report=html"
