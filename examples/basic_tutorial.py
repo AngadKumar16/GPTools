@@ -1,8 +1,8 @@
 """
-GPDiagnostics Basic Tutorial
+gptools Basic Tutorial
 ============================
 
-This tutorial demonstrates core functionality of gpdiagnostics.
+This tutorial demonstrates core functionality of gptools.
 """
 
 import numpy as np

@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "gpdiag"
+name = "gptools"
 version = "0.1.0"
 description = "Interpretability and Diagnostics Tools for Gaussian Processes"
 readme = "README.md"

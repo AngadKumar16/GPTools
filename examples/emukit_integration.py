@@ -2,17 +2,18 @@
 Advanced Integration with Emukit for Bayesian Optimization
 ===========================================================
 
-This example shows how to use gpdiagnostics with emukit's 
+This example shows how to use gptools with emukit's 
 experimental design loops.
 """
 
+import gptools
 import numpy as np
 import matplotlib.pyplot as plt
 from emukit.core import ParameterSpace, ContinuousParameter
 from emukit.core.loop import UserFunctionWrapper
 from emukit.bayesian_optimization.acquisitions import ExpectedImprovement
-from gpdiagnostics import UncertaintyProfiler, HyperparameterTracker
-from gpdiagnostics import ClarityBayesianOptimizationLoop
+from gptools import UncertaintyProfiler, HyperparameterTracker
+from gptools import ClarityBayesianOptimizationLoop
 
 # Define objective function
 def objective_function(x):
@@ -70,7 +71,7 @@ print("\nFinal Model Analysis:")
 print("-" * 30)
 
 final_model = loop.model.model
-gpdiagnostics.summarize_kernel(final_model)
+gptools.summarize_kernel(final_model)
 
 # Uncertainty at final acquisition points
 X_all = loop.loop_state.X
@@ -83,7 +84,7 @@ print(f"\nHigh uncertainty points identified: {len(regions['high_uncertainty_poi
 print(f"Threshold value: {regions['threshold']:.4f}")
 
 # Compare influence of initial vs acquired points
-influence = gpdiagnostics.DataInfluenceMap(final_model)
+influence = gptools.DataInfluenceMap(final_model)
 scores = influence.compute_influence_scores(X_all)
 
 fig, ax = plt.subplots(figsize=(12, 6))

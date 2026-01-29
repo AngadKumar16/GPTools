@@ -6,18 +6,18 @@ import GPy
 import numpy as np
 import pytest
 
-import gpdiagnostics
+import gptools
 
 
 class TestDataInfluenceMap:
     def test_influence_map_initialization(self, simple_gp):
         """Test influence map creation."""
-        influence_map = gpdiagnostics.DataInfluenceMap(simple_gp)
+        influence_map = gptools.DataInfluenceMap(simple_gp)
         assert influence_map.model is simple_gp
 
     def test_compute_influence_scores(self, simple_gp):
         """Test influence score computation."""
-        influence_map = gpdiagnostics.DataInfluenceMap(simple_gp)
+        influence_map = gptools.DataInfluenceMap(simple_gp)
         scores = influence_map.compute_influence_scores(simple_gp.X)
 
         assert len(scores) == simple_gp.X.shape[0]
@@ -26,7 +26,7 @@ class TestDataInfluenceMap:
 
     def test_get_influence_report(self, simple_gp):
         """Test comprehensive influence report."""
-        influence_map = gpdiagnostics.DataInfluenceMap(simple_gp)
+        influence_map = gptools.DataInfluenceMap(simple_gp)
         report = influence_map.get_influence_report(simple_gp.X, simple_gp.Y.flatten())
 
         assert "influence_scores" in report
@@ -39,7 +39,7 @@ class TestDataInfluenceMap:
 
     def test_loo_variance_increase(self, simple_gp):
         """Test LOO variance computation."""
-        influence_map = gpdiagnostics.DataInfluenceMap(simple_gp)
+        influence_map = gptools.DataInfluenceMap(simple_gp)
         var_inc, errors = influence_map.compute_loo_variance_increase(
             simple_gp.X, simple_gp.Y.flatten()
         )

@@ -1,10 +1,10 @@
-# GPDiagnostics: Gaussian Process Interpretability Toolkit
+# gptools: Gaussian Process Interpretability Toolkit
 
-![Python Version](https://img.shields.io/python/v/gpdiagnostics)
+![Python Version](https://img.shields.io/python/v/gptools)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Build Status](https://github.com/yourusername/gpdiagnostics/workflows/CI/badge.svg)
+![Build Status](https://github.com/yourusername/gptools/workflows/CI/badge.svg)
 
-**GPDiagnostics** is a production-ready library that transforms black-box Gaussian Process models into interpretable, debuggable, and trustworthy tools. Built on GPy and emukit, it provides human-readable insights into kernel behavior, uncertainty patterns, and model complexity.
+**gptools** is a production-ready library that transforms black-box Gaussian Process models into interpretable, debuggable, and trustworthy tools. Built on GPy and emukit, it provides human-readable insights into kernel behavior, uncertainty patterns, and model complexity.
 
 ---
 
@@ -22,7 +22,7 @@
 ## 🚀 Quick Start
 
 ```python
-import gpdiagnostics
+import gptools
 import GPy
 import numpy as np
 
@@ -34,17 +34,17 @@ kernel = GPy.kern.RBF(1) + GPy.kern.White(1)
 model = GPy.models.GPRegression(X, y[:, None], kernel)
 model.optimize()
 
-summary = gpdiagnostics.summarize_kernel(model)
+summary = gptools.summarize_kernel(model)
 
-profiler = gpdiagnostics.UncertaintyProfiler(model)
+profiler = gptools.UncertaintyProfiler(model)
 X_test = np.linspace(-2, 12, 200).reshape(-1, 1)
 profiler.plot(X_test, X_train=X, y_train=y)
 
-tracker = gpdiagnostics.HyperparameterTracker(model)
+tracker = gptools.HyperparameterTracker(model)
 history = tracker.wrapped_optimize(max_iters=50)
 tracker.plot_evolution()
 
-complexity = gpdiagnostics.compute_complexity_score(model, X)
+complexity = gptools.compute_complexity_score(model, X)
 print(f"Complexity: {complexity['score']:.2f} - {complexity['interpretation']}")
 ```
 
@@ -54,19 +54,19 @@ print(f"Complexity: {complexity['score']:.2f} - {complexity['interpretation']}")
 
 ### Stable Release
 ```bash
-pip install gpdiagnostics
+pip install gptools
 ```
 
 ### Development Version
 ```bash
-git clone https://github.com/yourusername/gpdiagnostics.git
-cd gpdiagnostics
+git clone https://github.com/yourusername/gptools.git
+cd gptools
 pip install -e ".[dev]"
 ```
 
 ### Conda (coming soon)
 ```bash
-conda install -c conda-forge gpdiagnostics
+conda install -c conda-forge gptools
 ```
 
 ---
@@ -74,7 +74,7 @@ conda install -c conda-forge gpdiagnostics
 ## 🏗️ Architecture
 
 ```
-gpdiagnostics/
+gptools/
 ├── kernel_summary
 ├── uncertainty_analysis
 ├── hyperparam_tracker
@@ -90,7 +90,7 @@ gpdiagnostics/
 ### Emukit Integration
 
 ```python
-from gpdiagnostics import ClarityBayesianOptimizationLoop
+from gptools import ClarityBayesianOptimizationLoop
 
 loop = ClarityBayesianOptimizationLoop(model, space)
 loop.run_loop(user_function, stopping_condition)
@@ -101,7 +101,7 @@ loop.plot_diagnostics()
 
 ```python
 models = [model1, model2, model3]
-reports = [gpdiagnostics.summarize_kernel(m, verbose=False) for m in models]
+reports = [gptools.summarize_kernel(m, verbose=False) for m in models]
 ```
 
 ---
@@ -143,11 +143,11 @@ Components: 2
 ## 🎓 Citation
 
 ```bibtex
-@software{gpdiagnostics2024,
-  title={GPDiagnostics: Gaussian Process Interpretability Toolkit},
+@software{gptools2024,
+  title={gptools: Gaussian Process Interpretability Toolkit},
   author={Your Name},
   year={2024},
-  url={https://github.com/yourusername/gpdiagnostics},
+  url={https://github.com/yourusername/gptools},
   version={0.1.0}
 }
 ```

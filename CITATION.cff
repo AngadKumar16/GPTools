@@ -1,12 +1,12 @@
 cff-version: 1.2.0
-title: "GPDiagnostics: Gaussian Process Interpretability Toolkit"
+title: "gptools: Gaussian Process Interpretability Toolkit"
 message: "If you use this software, please cite it as below."
 type: software
 authors:
   - given-names: Angad
     family-names: Kumar
-repository-code: "https://github.com/AngadKumar16/gpdiagnostics"
-url: "https://github.com/AngadKumar16/gpdiagnostics"
+repository-code: "https://github.com/AngadKumar16/gptools"
+url: "https://github.com/AngadKumar16/gptools"
 license: BSD-3-Clause
 version: 0.1.0
 date-released: 2026-01-26
@@ -21,6 +21,6 @@ preferred-citation:
   authors:
     - given-names: Angad
       family-names: Kumar
-  title: "GPDiagnostics: Gaussian Process Interpretability Toolkit"
+  title: "gptools: Gaussian Process Interpretability Toolkit"
   year: 2026
-  url: "https://github.com/AngadKumar16/gpdiagnostics"
+  url: "https://github.com/AngadKumar16/gptools"

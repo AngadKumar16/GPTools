@@ -1,5 +1,5 @@
 """
-Test fixtures and utilities for GPDiagnostics.
+Test fixtures and utilities for gptools.
 """
 
 import GPy

@@ -6,19 +6,19 @@ import GPy
 import numpy as np
 import pytest
 
-import gpdiagnostics
+import gptools
 
 
 class TestHyperparameterTracker:
     def test_tracker_initialization(self, simple_gp):
         """Test tracker initialization."""
-        tracker = gpdiagnostics.HyperparameterTracker(simple_gp)
+        tracker = gptools.HyperparameterTracker(simple_gp)
         assert tracker.model is simple_gp
         assert tracker.history == {}
 
     def test_record_state(self, simple_gp):
         """Test state recording."""
-        tracker = gpdiagnostics.HyperparameterTracker(simple_gp)
+        tracker = gptools.HyperparameterTracker(simple_gp)
         tracker.record_state()
 
         assert len(tracker.history) > 0
@@ -27,7 +27,7 @@ class TestHyperparameterTracker:
 
     def test_wrapped_optimize(self, simple_gp):
         """Test optimization wrapping."""
-        tracker = gpdiagnostics.HyperparameterTracker(simple_gp)
+        tracker = gptools.HyperparameterTracker(simple_gp)
         history = tracker.wrapped_optimize(max_iters=5)
 
         assert len(history) > 0
@@ -37,7 +37,7 @@ class TestHyperparameterTracker:
 
     def test_convergence_report(self, simple_gp):
         """Test convergence analysis."""
-        tracker = gpdiagnostics.HyperparameterTracker(simple_gp)
+        tracker = gptools.HyperparameterTracker(simple_gp)
         tracker.wrapped_optimize(max_iters=10)
         report = tracker.get_convergence_report()
 
