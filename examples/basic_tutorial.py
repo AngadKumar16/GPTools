@@ -7,7 +7,7 @@ This tutorial demonstrates core functionality of gptools.
 
 import numpy as np
 import matplotlib.pyplot as plt
-import gptools
+import gpclarity
 import GPy
 
 # Generate synthetic data
@@ -26,14 +26,14 @@ print("✅ Model trained successfully!")
 print("\n" + "="*50)
 print("KERNEL INTERPRETATION")
 print("="*50)
-gptools.summarize_kernel(model)
+gpclarity.summarize_kernel(model)
 
 # 2. Uncertainty Profiling
 print("\n" + "="*50)
 print("UNCERTAINTY ANALYSIS")
 print("="*50)
 
-profiler = gptools.UncertaintyProfiler(model)
+profiler = gpclarity.UncertaintyProfiler(model)
 X_test = np.linspace(-2, 12, 200).reshape(-1, 1)
 
 # Plot uncertainty profile
@@ -52,7 +52,7 @@ print("\n" + "="*50)
 print("HYPERPARAMETER TRACKING")
 print("="*50)
 
-tracker = gptools.HyperparameterTracker(model)
+tracker = gpclarity.HyperparameterTracker(model)
 print("Re-running optimization with tracking...")
 
 # Re-initialize for demo
@@ -72,7 +72,7 @@ print("\n" + "="*50)
 print("MODEL COMPLEXITY ANALYSIS")
 print("="*50)
 
-complexity = gptools.compute_complexity_score(model, X_train)
+complexity = gpclarity.compute_complexity_score(model, X_train)
 print(f"Complexity Score: {complexity['score']:.3f}")
 print(f"Interpretation: {complexity['interpretation']}")
 print("Components:")
@@ -84,7 +84,7 @@ print("\n" + "="*50)
 print("DATA INFLUENCE ANALYSIS")
 print("="*50)
 
-influence = gptools.DataInfluenceMap(model)
+influence = gpclarity.DataInfluenceMap(model)
 scores = influence.compute_influence_scores(X_train)
 
 fig, ax = plt.subplots(figsize=(12, 6))

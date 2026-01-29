@@ -6,32 +6,32 @@ import GPy
 import numpy as np
 import pytest
 
-import gptools
+import gpclarity
 
 
 class TestUtils:
     def test_get_lengthscale(self, simple_gp):
         """Test lengthscale extraction."""
-        ls = gptools.get_lengthscale(simple_gp)
+        ls = gpclarity.get_lengthscale(simple_gp)
         assert ls is not None
         assert ls > 0
 
     def test_get_noise_variance(self, simple_gp):
         """Test noise variance extraction."""
-        nv = gptools.get_noise_variance(simple_gp)
+        nv = gpclarity.get_noise_variance(simple_gp)
         assert nv is not None
         assert nv > 0
 
     def test_extract_kernel_params_flat(self, simple_gp):
         """Test parameter flattening."""
-        params = gptools.extract_kernel_params_flat(simple_gp)
+        params = gpclarity.extract_kernel_params_flat(simple_gp)
         assert isinstance(params, dict)
         assert len(params) > 0
         assert all(isinstance(v, float) for v in params.values())
 
     def test_check_model_health(self, simple_gp):
         """Test model health check."""
-        health = gptools.check_model_health(simple_gp)
+        health = gpclarity.check_model_health(simple_gp)
         assert isinstance(health, dict)
         assert "healthy" in health
         assert isinstance(health["healthy"], bool)
@@ -47,5 +47,5 @@ class TestUtils:
         # Force NaN in parameters
         model.kern.lengthscale = np.nan
 
-        health = gptools.check_model_health(model)
+        health = gpclarity.check_model_health(model)
         assert health["healthy"] is False

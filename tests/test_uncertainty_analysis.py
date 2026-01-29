@@ -6,18 +6,18 @@ import GPy
 import numpy as np
 import pytest
 
-import gptools
+import gpclarity
 
 
 class TestUncertaintyProfiler:
     def test_profiler_initialization(self, simple_gp):
         """Test profiler creates correctly."""
-        profiler = gptools.UncertaintyProfiler(simple_gp)
+        profiler = gpclarity.UncertaintyProfiler(simple_gp)
         assert profiler.model is simple_gp
 
     def test_predict_with_uncertainty(self, simple_gp, X_test):
         """Test prediction method."""
-        profiler = gptools.UncertaintyProfiler(simple_gp)
+        profiler = gpclarity.UncertaintyProfiler(simple_gp)
         mean, var = profiler.predict_with_uncertainty(X_test)
 
         assert mean.shape == (X_test.shape[0], 1)
@@ -26,7 +26,7 @@ class TestUncertaintyProfiler:
 
     def test_compute_diagnostics(self, simple_gp, X_test):
         """Test diagnostic computation."""
-        profiler = gptools.UncertaintyProfiler(simple_gp)
+        profiler = gpclarity.UncertaintyProfiler(simple_gp)
         diagnostics = profiler.compute_diagnostics(X_test)
 
         required_keys = [
@@ -42,7 +42,7 @@ class TestUncertaintyProfiler:
 
     def test_identify_uncertainty_regions(self, simple_gp, X_test):
         """Test region identification."""
-        profiler = gptools.UncertaintyProfiler(simple_gp)
+        profiler = gpclarity.UncertaintyProfiler(simple_gp)
         regions = profiler.identify_uncertainty_regions(X_test, threshold_percentile=90)
 
         assert "high_uncertainty_points" in regions

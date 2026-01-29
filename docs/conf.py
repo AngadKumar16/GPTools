@@ -9,14 +9,14 @@ from pathlib import Path
 # -- Path setup --------------------------------------------------------------
 # Add parent directory to path for autodoc
 sys.path.insert(0, os.path.abspath('..'))
-import gptools
+import gpclarity
 
 # -- Project information -----------------------------------------------------
 project = 'GPTools'
 copyright = '2024, Angad Kumar'
 author = 'Angad Kumar'
-release = gptools.__version__
-version = gptools.__version__
+release = gpclarity.__version__
+version = gpclarity.__version__
 # -- General configuration ---------------------------------------------------
 extensions = [
     # Core Sphinx extensions

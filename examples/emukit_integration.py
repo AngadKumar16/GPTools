@@ -6,14 +6,14 @@ This example shows how to use gptools with emukit's
 experimental design loops.
 """
 
-import gptools
+import gpclarity
 import numpy as np
 import matplotlib.pyplot as plt
 from emukit.core import ParameterSpace, ContinuousParameter
 from emukit.core.loop import UserFunctionWrapper
 from emukit.bayesian_optimization.acquisitions import ExpectedImprovement
-from gptools import UncertaintyProfiler, HyperparameterTracker
-from gptools import ClarityBayesianOptimizationLoop
+from gpclarity import UncertaintyProfiler, HyperparameterTracker
+from gpclarity import ClarityBayesianOptimizationLoop
 
 # Define objective function
 def objective_function(x):
@@ -71,7 +71,7 @@ print("\nFinal Model Analysis:")
 print("-" * 30)
 
 final_model = loop.model.model
-gptools.summarize_kernel(final_model)
+gpclarity.summarize_kernel(final_model)
 
 # Uncertainty at final acquisition points
 X_all = loop.loop_state.X
@@ -84,7 +84,7 @@ print(f"\nHigh uncertainty points identified: {len(regions['high_uncertainty_poi
 print(f"Threshold value: {regions['threshold']:.4f}")
 
 # Compare influence of initial vs acquired points
-influence = gptools.DataInfluenceMap(final_model)
+influence = gpclarity.DataInfluenceMap(final_model)
 scores = influence.compute_influence_scores(X_all)
 
 fig, ax = plt.subplots(figsize=(12, 6))
