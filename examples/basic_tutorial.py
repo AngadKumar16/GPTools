@@ -1,8 +1,8 @@
 """
-gptools Basic Tutorial
+gpclarity Basic Tutorial
 ============================
 
-This tutorial demonstrates core functionality of gptools.
+This tutorial demonstrates core functionality of gpclarity.
 """
 
 import numpy as np

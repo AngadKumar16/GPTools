@@ -2,7 +2,7 @@
 Advanced Integration with Emukit for Bayesian Optimization
 ===========================================================
 
-This example shows how to use gptools with emukit's 
+This example shows how to use gpclarity with emukit's 
 experimental design loops.
 """
 

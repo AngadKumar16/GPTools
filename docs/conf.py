@@ -12,7 +12,7 @@ sys.path.insert(0, os.path.abspath('..'))
 import gpclarity
 
 # -- Project information -----------------------------------------------------
-project = 'GPTools'
+project = 'GPClarity'
 copyright = '2024, Angad Kumar'
 author = 'Angad Kumar'
 release = gpclarity.__version__
@@ -118,6 +118,6 @@ intersphinx_mapping = {
 # -- Custom variables for use in templates -----------------------------------
 html_context = {
     'github_user': 'AngadKumar16', 
-    'github_repo': 'gptools',
+    'github_repo': 'gpclarity',
     'github_version': 'main',
 }
