@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "gptools"
+name = "gpclarity"
 version = "0.1.0"
 description = "Interpretability and Diagnostics Tools for Gaussian Processes"
 readme = "README.md"
@@ -25,7 +25,7 @@ classifiers = [
 ]
 requires-python = ">=3.9"
 
-# These are installed automatically with: pip install gptools
+# These are installed automatically with: pip install gpclarity
 dependencies = [
     "numpy>=1.20.0",
     "scipy>=1.7.0",
@@ -54,12 +54,12 @@ docs = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/yourusername/gptools"
-Issues = "https://github.com/yourusername/gptools/issues"
-Documentation = "https://gptools.readthedocs.io"
+Homepage = "https://github.com/yourusername/gpclarity"
+Issues = "https://github.com/yourusername/gpclarity/issues"
+Documentation = "https://gpclarity.readthedocs.io"
 
 [tool.hatch.build.targets.wheel]
-packages = ["gptools"]
+packages = ["gpclarity"]
 
 [tool.black]
 line-length = 88
@@ -72,4 +72,4 @@ warn_unused_configs = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "--cov=gptools --cov-report=html"
+addopts = "--cov=gpclarity --cov-report=html"

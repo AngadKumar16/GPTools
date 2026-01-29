@@ -1,5 +1,5 @@
 """
-gptools: Interpretability Toolkit for Gaussian Processes
+gpclarity: Interpretability Toolkit for Gaussian Processes
 ==============================================================
 
 Extends GPy and emukit with human-readable diagnostics, uncertainty
@@ -60,8 +60,8 @@ except ImportError as e:  # pragma: no cover
     _IMPORT_ERROR = str(e)
 
     warnings.warn(
-        f"gptools: Some features unavailable due to missing dependency: {e}\n"
-        "Install with 'pip install gptools[full]' for complete functionality.",
+        f"gpclarity: Some features unavailable due to missing dependency: {e}\n"
+        "Install with 'pip install gpclarity[full]' for complete functionality.",
         ImportWarning,
         stacklevel=2,
     )

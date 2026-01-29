@@ -1,5 +1,5 @@
 """
-Test fixtures and utilities for gptools.
+Test fixtures and utilities for gpclarity.
 """
 
 import GPy

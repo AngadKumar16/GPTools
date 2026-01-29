@@ -147,7 +147,7 @@ Components: 2
   title={gptools: Gaussian Process Interpretability Toolkit},
   author={Your Name},
   year={2024},
-  url={https://github.com/yourusername/gptools},
+  url={https://github.com/yourusername/gpclarity},
   version={0.1.0}
 }
 ```

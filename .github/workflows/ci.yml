@@ -63,7 +63,7 @@ jobs:
     - name: Run test suite
       run: |
         pytest tests/ \
-          --cov=gptools \
+          --cov=gpclarity \
           --cov-report=xml \
           -v
 
@@ -75,12 +75,12 @@ jobs:
 
     - name: Type checking
       continue-on-error: true
-      run: mypy gptools/ --ignore-missing-imports
+      run: mypy gpclarity/ --ignore-missing-imports
 
     - name: Format checking
       run: |
-        black --check gptools/ tests/
-        # isort --check-only gptools/ tests/
+        black --check gpclarity/ tests/
+        # isort --check-only gpclarity/ tests/
 
   build:
     name: Build Package
@@ -132,4 +132,4 @@ jobs:
     
     - name: Verify
       run: |
-        python -c "import gptools; print(gptools.__version__)"
+        python -c "import gpclarity; print(gpclarity.__version__)"
