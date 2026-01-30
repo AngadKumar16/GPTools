@@ -1,0 +1,5 @@
+myst-parser
+nbsphinx
+sphinx-copybutton
+sphinx-rtd-theme
+ipykernel
