@@ -12,14 +12,14 @@ build:
   jobs:
     #Verify index.rst exists in the build environment
     post_checkout:
-      - echo "=== DEBUG: Build directory ==="
+      - echo "DEBUG Build directory"
       - pwd && ls -la
-      - echo "=== DEBUG: docs/ directory ==="
-      - ls -la docs/ || echo "docs/ not found"
-      - echo "=== DEBUG: Git status ==="
+      - echo "DEBUG docs directory"
+      - ls -la docs/ || echo "DOCS NOT FOUND"
+      - echo "DEBUG Git status"
       - git status --short
-      - echo "=== DEBUG: Checking index.rst ==="
-      - test -f docs/index.rst && echo "File exists" || (echo "File missing" && exit 1)
+      - echo "DEBUG Checking index.rst"
+      - test -f docs/index.rst && echo "FILE EXISTS" || (echo "FILE MISSING" && exit 1)
 
 # Build documentation in the "docs/" directory with Sphinx
 sphinx:
