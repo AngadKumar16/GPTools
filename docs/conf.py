@@ -4,7 +4,6 @@
 
 import sys
 import os
-from pathlib import Path
 
 # -- Path setup --------------------------------------------------------------
 # Add parent directory to path for autodoc
@@ -17,6 +16,7 @@ copyright = '2024, Angad Kumar'
 author = 'Angad Kumar'
 release = gpclarity.__version__
 version = gpclarity.__version__
+
 # -- General configuration ---------------------------------------------------
 extensions = [
     # Core Sphinx extensions
@@ -28,9 +28,6 @@ extensions = [
     # Inter-project linking
     'sphinx.ext.intersphinx',    # Link to other projects' docs
     
-    # Markdown support
-    'myst_parser',               # Markdown parsing
-    
     # Jupyter notebook support
     'nbsphinx',                  # Render Jupyter notebooks
     
@@ -39,7 +36,8 @@ extensions = [
     'sphinx_copybutton',         # Copy button for code blocks
 ]
 
-# -- Extension settings ------------------------------------------------------
+# Master document - tells Sphinx to use index.rst
+master_doc = 'index'
 
 # Autodoc settings
 autodoc_default_options = {
@@ -59,16 +57,6 @@ napoleon_include_init_with_doc = False
 napoleon_include_private_with_doc = False
 napoleon_use_ivar = True
 
-# MyST parser settings (for Markdown)
-myst_enable_extensions = [
-    "dollarmath",       # LaTeX math support ($...$)
-    "amsmath",          # Extended LaTeX math environments
-    "deflist",          # Definition lists
-    "html_admonition",  # HTML admonitions
-    "html_image",       # HTML image handling
-]
-myst_heading_anchors = 3  # Generate anchors for headings
-
 # nbsphinx settings (for Jupyter notebooks)
 nbsphinx_execute = 'never'  # Don't execute notebooks during doc build
 nbsphinx_allow_errors = False  # Fail build if notebook has errors
@@ -81,13 +69,10 @@ include_patterns = ['**/*.rst', '**/*.md', '**/*.ipynb']
 # -- HTML output options -----------------------------------------------------
 html_theme = 'sphinx_rtd_theme'  # Read the Docs theme
 
-html_static_path = ['_static']  # Custom CSS/JS directory
+# Comment out or remove html_static_path if you don't have custom static files
+# html_static_path = ['_static']
 
 # Theme customization
-html_css_files = [
-    'custom.css',  # Custom styling
-]
-
 html_theme_options = {
     # Navigation
     'navigation_depth': 4,              # Maximum depth of navigation tree
