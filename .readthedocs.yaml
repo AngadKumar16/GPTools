@@ -10,7 +10,7 @@ build:
   tools:
     python: "3.13"
   jobs:
-    # Verify index.rst exists in the build environment
+    #Verify index.rst exists in the build environment
     post_checkout:
       - echo "=== DEBUG: Build directory ==="
       - pwd && ls -la
