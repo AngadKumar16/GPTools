@@ -12,14 +12,14 @@ build:
   jobs:
     #Verify index.rst exists in the build environment
     post_checkout:
-      - echo "DEBUG Build directory"
-      - pwd && ls -la
-      - echo "DEBUG docs directory"
-      - ls -la docs/ || echo "DOCS NOT FOUND"
-      - echo "DEBUG Git status"
-      - git status --short
-      - echo "DEBUG Checking index.rst"
-      - test -f docs/index.rst && echo "FILE EXISTS" || (echo "FILE MISSING" && exit 1)
+      - echo "=== FORCING RTD TO USE LATEST MAIN ==="
+      - git fetch origin main
+      - git checkout main
+      - git reset --hard origin/main
+      - echo "=== Files in docs/ after reset ==="
+      - ls -la docs/
+      - echo "=== Verifying index.rst ==="
+      - test -f docs/index.rst
 
 # Build documentation in the "docs/" directory with Sphinx
 sphinx:
