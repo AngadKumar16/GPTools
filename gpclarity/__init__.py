@@ -15,79 +15,135 @@ a clean, stable API surface for users.
 Import Safety
 -------------
 Heavy scientific computing dependencies (GPy, emukit) are wrapped in
-try/except blocks to enable lightweight installs for documentation
-or analysis-only workflows.
+lazy loading mechanisms to enable fast imports and lightweight installs
+for documentation or analysis-only workflows.
+
+Quick Start
+-----------
+>>> from gpclarity import UncertaintyProfiler, summarize_kernel
+>>> # Features unavailable without dependencies raise informative errors
 """
 
-# Version source of truth - prevents circular imports in complex packages
+import warnings
+from importlib.util import find_spec
+
+# Version source of truth - keep this lightweight (no heavy imports)
 from ._version import __version__
 
-# Public API: High-level interpretability and diagnostic tools
-# Internal utilities are intentionally not exposed here
+# Dependency availability flags (checked without importing)
+_GPY_AVAILABLE = find_spec("GPy") is not None
+_EMUKIT_AVAILABLE = find_spec("emukit") is not None
 
-try:
-    # Core interpretability modules
-    from .data_influence import DataInfluenceMap
-    from .hyperparam_tracker import HyperparameterTracker
-    from .kernel_summary import (
-        format_kernel_tree,
-        interpret_lengthscale,
-        interpret_variance,
-        summarize_kernel,
-    )
-    from .model_complexity import (
-        compute_complexity_score,
-        compute_noise_ratio,
-        compute_roughness_score,
-        count_kernel_components,
-    )
-    from .uncertainty_analysis import UncertaintyProfiler
-    from .utils import (
-        check_model_health,
-        extract_kernel_params_flat,
-        get_lengthscale,
-        get_noise_variance,
-    )
+# Build __all__ dynamically based on availability
+__all__ = ["__version__", "AVAILABLE"]
 
-    # Flag indicating successful import of all features
-    _FULL_IMPORT_SUCCESS = True
-
-except ImportError as e:  # pragma: no cover
-    # Graceful degradation for minimal installs
-    import warnings
-
-    _FULL_IMPORT_SUCCESS = False
-    _IMPORT_ERROR = str(e)
-
-    warnings.warn(
-        f"gpclarity: Some features unavailable due to missing dependency: {e}\n"
-        "Install with 'pip install gpclarity[full]' for complete functionality.",
-        ImportWarning,
-        stacklevel=2,
-    )
-
-    # Define stubs to prevent NameError
-    summarize_kernel = None
-    format_kernel_tree = None
-    interpret_lengthscale = None
-    interpret_variance = None
-    UncertaintyProfiler = None
-    HyperparameterTracker = None
-    compute_complexity_score = None
-    count_kernel_components = None
-    compute_roughness_score = None
-    compute_noise_ratio = None
-    DataInfluenceMap = None
-    get_lengthscale = None
-    get_noise_variance = None
-    extract_kernel_params_flat = None
-    check_model_health = None
+# Public availability flag for programmatic checks
+AVAILABLE = {
+    "gpy": _GPY_AVAILABLE,
+    "emukit": _EMUKIT_AVAILABLE,
+    "full": _GPY_AVAILABLE and _EMUKIT_AVAILABLE,
+}
 
 
-# Explicit public API declaration
-__all__ = [
-    # Version
-    "__version__",
+class _UnavailableFeature:
+    """
+    Stub that raises informative ImportError when accessed.
+    Allows `from gpclarity import X` to succeed, but fails gracefully on usage.
+    """
+    
+    def __init__(self, name: str, dependency: str, install_extra: str):
+        self.name = name
+        self.dependency = dependency
+        self.install_extra = install_extra
+    
+    def __call__(self, *args, **kwargs):
+        raise ImportError(
+            f"{self.name} requires {self.dependency} which is not installed. "
+            f"Install with: pip install gpclarity[{self.install_extra}]"
+        )
+    
+    def __getattr__(self, attr):
+        return self.__call__
+    
+    def __repr__(self):
+        return f"<Unavailable: {self.name} (requires {self.dependency})>"
+
+
+def __getattr__(name: str):
+    """
+    Lazy loader for heavy modules.
+    Only imports GPy/emukit-dependent code when actually accessed.
+    """
+    # Kernel Summary
+    if name in ("summarize_kernel", "format_kernel_tree", 
+                "interpret_lengthscale", "interpret_variance"):
+        if not _GPY_AVAILABLE:
+            return _UnavailableFeature(name, "GPy", "full")
+        from .kernel_summary import (
+            summarize_kernel,
+            format_kernel_tree,
+            interpret_lengthscale,
+            interpret_variance,
+        )
+        return locals()[name]
+    
+    # Uncertainty Analysis
+    if name == "UncertaintyProfiler":
+        if not _EMUKIT_AVAILABLE:
+            return _UnavailableFeature(name, "emukit", "full")
+        from .uncertainty_analysis import UncertaintyProfiler
+        return UncertaintyProfiler
+    
+    # Hyperparameter Tracking
+    if name == "HyperparameterTracker":
+        if not _GPY_AVAILABLE:
+            return _UnavailableFeature(name, "GPy", "full")
+        from .hyperparam_tracker import HyperparameterTracker
+        return HyperparameterTracker
+    
+    # Model Complexity
+    if name in ("compute_complexity_score", "count_kernel_components",
+                "compute_roughness_score", "compute_noise_ratio"):
+        if not _GPY_AVAILABLE:
+            return _UnavailableFeature(name, "GPy", "full")
+        from .model_complexity import (
+            compute_complexity_score,
+            count_kernel_components,
+            compute_roughness_score,
+            compute_noise_ratio,
+        )
+        return locals()[name]
+    
+    # Data Influence
+    if name == "DataInfluenceMap":
+        if not _GPY_AVAILABLE:
+            return _UnavailableFeature(name, "GPy", "full")
+        from .data_influence import DataInfluenceMap
+        return DataInfluenceMap
+    
+    # Utilities
+    if name in ("check_model_health", "extract_kernel_params_flat",
+                "get_lengthscale", "get_noise_variance"):
+        if not _GPY_AVAILABLE:
+            return _UnavailableFeature(name, "GPy", "full")
+        from .utils import (
+            check_model_health,
+            extract_kernel_params_flat,
+            get_lengthscale,
+            get_noise_variance,
+        )
+        return locals()[name]
+    
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
+def __dir__():
+    """Enable tab completion for available features."""
+    return sorted(__all__)
+
+
+# Populate __all__ with potentially available features
+__all__.extend([
     # Kernel Summary
     "summarize_kernel",
     "format_kernel_tree",
@@ -109,7 +165,24 @@ __all__ = [
     "get_noise_variance",
     "extract_kernel_params_flat",
     "check_model_health",
-]
+])
+
+
+# Warn once if running in limited mode
+if not AVAILABLE["full"]:
+    missing = []
+    if not _GPY_AVAILABLE:
+        missing.append("GPy")
+    if not _EMUKIT_AVAILABLE:
+        missing.append("emukit")
+    
+    warnings.warn(
+        f"gpclarity running in limited mode. Missing: {', '.join(missing)}. "
+        f"Install with 'pip install gpclarity[full]' for complete functionality.",
+        ImportWarning,
+        stacklevel=2,
+    )
+
 
 # Package metadata
 __author__ = "Angad Kumar"

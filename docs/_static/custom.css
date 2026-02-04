@@ -1,0 +1,27 @@
+/* Custom styles for GPClarity docs */
+
+.wy-nav-content {
+    max-width: 1000px;
+}
+
+/* Better code blocks */
+.highlight {
+    background: #f8f9fa;
+    border-radius: 4px;
+}
+
+/* Parameter tables */
+table.docutils {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+table.docutils th {
+    background-color: #f0f0f0;
+    padding: 8px;
+}
+
+table.docutils td {
+    padding: 8px;
+    border-bottom: 1px solid #ddd;
+}
