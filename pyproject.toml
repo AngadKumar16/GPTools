@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "gpclarity"
-version = "0.1.1"
+version = "0.0.2"
 description = "Interpretability and Diagnostics Tools for Gaussian Processes"
 readme = "README.md"
 license = {file = "LICENSE"}
@@ -55,7 +55,7 @@ docs = [
 
 [project.urls]
 Homepage = "https://github.com/AngadKumar16/gpclarity"
-Issues = "https://github.com/yourusername/gpclarity/issues"
+Issues = "https://github.com/AngadKumar16/gpclarity/issues"
 Documentation = "https://gpclarity.readthedocs.io"
 
 [tool.hatch.build.targets.wheel]
