@@ -1,718 +1,415 @@
 """
-Kernel interpretation and summarization tools for GPy models.
+Hyperparameter evolution tracking during GP model optimization.
 """
 
 from __future__ import annotations
 
-import json
 import logging
-from dataclasses import asdict, dataclass, field
-from enum import Enum, auto
-from typing import Any, Callable, Dict, List, Optional, Protocol, Set, Union
+import time
+import warnings
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 
-from gpclarity.exceptions import KernelError
+from gpclarity.exceptions import OptimizationError, TrackingError
+
+if TYPE_CHECKING:
+    import matplotlib.pyplot as plt
 
 logger = logging.getLogger(__name__)
 
 
-class SmoothnessCategory(Enum):
-    """Categorization of lengthscale interpretations."""
-    RAPID_VARIATION = auto()
-    MODERATE = auto()
-    SMOOTH_TREND = auto()
-    
-    def describe(self) -> str:
-        descriptions = {
-            SmoothnessCategory.RAPID_VARIATION: "Rapid variation (high frequency)",
-            SmoothnessCategory.MODERATE: "Moderate flexibility",
-            SmoothnessCategory.SMOOTH_TREND: "Smooth trends (low frequency)",
-        }
-        return descriptions[self]
-
-
-class VarianceCategory(Enum):
-    """Categorization of variance interpretations."""
-    VERY_LOW = auto()
-    MODERATE = auto()
-    HIGH = auto()
-    
-    def describe(self, name: str = "signal") -> str:
-        return f"{self.name.replace('_', ' ').title()} {name.lower()}"
-
-
-@dataclass(frozen=True)
-class LengthscaleThresholds:
-    """Configurable thresholds for lengthscale interpretation."""
-    rapid_variation: float = 0.5
-    smooth_trend: float = 2.0
-    
-    def __post_init__(self):
-        if not 0 < self.rapid_variation < self.smooth_trend:
-            raise ValueError(
-                f"Thresholds must satisfy 0 < rapid_variation ({self.rapid_variation}) "
-                f"< smooth_trend ({self.smooth_trend})"
-            )
-    
-    def categorize(self, lengthscale: float) -> SmoothnessCategory:
-        """Categorize a lengthscale value."""
-        if lengthscale < self.rapid_variation:
-            return SmoothnessCategory.RAPID_VARIATION
-        elif lengthscale > self.smooth_trend:
-            return SmoothnessCategory.SMOOTH_TREND
-        return SmoothnessCategory.MODERATE
-
-
-@dataclass(frozen=True)
-class VarianceThresholds:
-    """Configurable thresholds for variance interpretation."""
-    very_low: float = 0.01
-    high: float = 10.0
-    
-    def __post_init__(self):
-        if self.very_low <= 0 or self.high <= 0:
-            raise ValueError("Variance thresholds must be positive")
-        if self.very_low >= self.high:
-            raise ValueError(
-                f"very_low ({self.very_low}) must be < high ({self.high})"
-            )
-    
-    def categorize(self, variance: float) -> VarianceCategory:
-        """Categorize a variance value."""
-        if variance < self.very_low:
-            return VarianceCategory.VERY_LOW
-        elif variance > self.high:
-            return VarianceCategory.HIGH
-        return VarianceCategory.MODERATE
+@dataclass
+class OptimizationState:
+    """Snapshot of model state at a specific iteration."""
+    iteration: int
+    parameters: Dict[str, Union[float, np.ndarray]]
+    log_likelihood: Optional[float] = None
+    gradient_norm: Optional[float] = None
+    timestamp: float = field(default_factory=time.perf_counter)
 
 
 @dataclass
-class InterpretationConfig:
-    """Complete configuration for kernel interpretation."""
-    lengthscale: LengthscaleThresholds = field(
-        default_factory=LengthscaleThresholds
-    )
-    variance: VarianceThresholds = field(default_factory=VarianceThresholds)
-    
-    def __post_init__(self):
-        # Ensure proper types
-        if isinstance(self.lengthscale, dict):
-            self.lengthscale = LengthscaleThresholds(**self.lengthscale)
-        if isinstance(self.variance, dict):
-            self.variance = VarianceThresholds(**self.variance)
+class ConvergenceMetrics:
+    """Statistical metrics for parameter convergence."""
+    initial_mean: float
+    final_mean: float
+    relative_change: float
+    final_std: float
+    coefficient_of_variation: float
+    is_converged: bool
+    trend_direction: str  # 'increasing', 'decreasing', 'stable'
 
 
-@dataclass
-class KernelComponent:
-    """Represents a single kernel component with interpretation."""
-    name: str
-    kernel_type: str
-    path: str
-    parameters: Dict[str, Any] = field(default_factory=dict)
-    interpretations: Dict[str, str] = field(default_factory=dict)
-    is_composite: bool = False
-    children: List["KernelComponent"] = field(default_factory=list)
-    
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert to dictionary representation."""
-        result = {
-            "name": self.name,
-            "type": self.kernel_type,
-            "parameters": self.parameters,
-            "interpretations": self.interpretations,
-        }
-        if self.children:
-            result["children"] = [c.to_dict() for c in self.children]
-        return result
-
-
-class KernelVisitor(Protocol):
-    """Protocol for kernel tree visitors."""
-    def visit(self, kernel: Any, path: str = "") -> Optional[KernelComponent]:
-        ...
-
-
-class KernelInterpreter:
+class HyperparameterTracker:
     """
-    Interpretable kernel analysis with pluggable strategies.
-    
-    This class provides the core interpretation logic, separated from
-    the high-level API functions.
+    Track hyperparameter trajectories during model optimization.
     """
-    
-    # Registry of kernel-specific interpreters
-    _interpreters: Dict[str, Callable[[Any, InterpretationConfig], Dict[str, Any]]] = {}
-    
-    def __init__(self, config: Optional[InterpretationConfig] = None):
-        self.config = config or InterpretationConfig()
-    
-    @classmethod
-    def register_kernel(cls, kernel_type: str):
-        """Decorator to register interpreter for specific kernel type."""
-        def decorator(func: Callable[[Any, InterpretationConfig], Dict[str, Any]]):
-            cls._interpreters[kernel_type] = func
-            return func
-        return decorator
-    
-    def interpret(self, kernel: Any, path: str = "") -> KernelComponent:
+
+    def __init__(self, model: Any):
         """
-        Interpret a kernel or kernel component.
-        
+        Initialize tracker with GP model.
+
         Args:
-            kernel: GPy kernel object
-            path: Hierarchical path string
-            
-        Returns:
-            KernelComponent with interpretations
+            model: GPy model or compatible object with .parameters attribute
+
+        Raises:
+            TrackingError: If model lacks required attributes
         """
-        kernel_name = getattr(kernel, 'name', 'unknown')
-        kernel_type = type(kernel).__name__
-        
-        # Check for registered handler
-        if kernel_type in self._interpreters:
-            params = self._interpreters[kernel_type](kernel, self.config)
-        else:
-            params = self._interpret_generic(kernel)
-        
-        # Build component
-        component = KernelComponent(
-            name=kernel_name,
-            kernel_type=kernel_type,
-            path=path,
-            parameters=params.get("parameters", {}),
-            interpretations=params.get("interpretations", {}),
-            is_composite=params.get("is_composite", False),
+        if not hasattr(model, "parameters"):
+            raise TrackingError("Model must have 'parameters' attribute")
+        if not hasattr(model, "optimize"):
+            raise TrackingError("Model must have 'optimize' method")
+
+        self.model = model
+        self._history: List[OptimizationState] = []
+        self._param_names: List[str] = [p.name for p in model.parameters]
+        self._start_time: Optional[float] = None
+
+    @property
+    def history(self) -> List[OptimizationState]:
+        """Get optimization history."""
+        return self._history.copy()
+
+    @property
+    def iteration_count(self) -> int:
+        """Get current iteration count."""
+        return len(self._history)
+
+    def record_state(self, iteration: Optional[int] = None) -> OptimizationState:
+        """Snapshot current hyperparameter values."""
+        params = {}
+        for param in self.model.parameters:
+            val = self._extract_param_value(param)
+            params[param.name] = val
+
+        # Capture optimization metadata if available
+        log_likelihood = None
+        gradient_norm = None
+
+        try:
+            if hasattr(self.model, "log_likelihood"):
+                log_likelihood = float(self.model.log_likelihood())
+            if hasattr(self.model, "gradient"):
+                grad = self.model.gradient
+                if grad is not None:
+                    gradient_norm = float(np.linalg.norm(grad))
+        except Exception as e:
+            logger.debug(f"Could not extract optimization metadata: {e}")
+
+        state = OptimizationState(
+            iteration=iteration if iteration is not None else self.iteration_count,
+            parameters=params,
+            log_likelihood=log_likelihood,
+            gradient_norm=gradient_norm,
         )
-        
-        # Handle composite kernels recursively
-        if component.is_composite and hasattr(kernel, "parts"):
-            for i, part in enumerate(kernel.parts):
-                child_path = f"{path}.parts[{i}]" if path else f"parts[{i}]"
-                child = self.interpret(part, child_path)
-                component.children.append(child)
-        
-        return component
-    
-    def _interpret_generic(self, kernel: Any) -> Dict[str, Any]:
-        """Generic interpretation fallback."""
-        result = {"parameters": {}, "interpretations": {}, "is_composite": False}
-        
-        # Extract common parameters
-        if hasattr(kernel, "lengthscale"):
-            ls = kernel.lengthscale
-            ls_values = self._extract_values(ls)
-            result["parameters"]["lengthscale"] = ls_values
-            
-            # Interpret ARD lengthscales
-            if isinstance(ls_values, (list, np.ndarray)) and len(ls_values) > 1:
-                mean_ls = float(np.mean(ls_values))
-                range_str = f"[{np.min(ls_values):.2f}, {np.max(ls_values):.2f}]"
-                category = self.config.lengthscale.categorize(mean_ls)
-                result["interpretations"]["smoothness"] = (
-                    f"{category.describe()} (ARD, range: {range_str})"
-                )
-            else:
-                ls_float = float(ls_values[0]) if isinstance(ls_values, list) else float(ls_values)
-                category = self.config.lengthscale.categorize(ls_float)
-                result["interpretations"]["smoothness"] = category.describe()
-        
-        if hasattr(kernel, "variance"):
-            var = float(kernel.variance)
-            result["parameters"]["variance"] = var
-            category = self.config.variance.categorize(var)
-            name = "Noise" if self._is_noise_kernel(kernel) else "Signal"
-            result["interpretations"]["strength"] = category.describe(name)
-        
-        if hasattr(kernel, "periodicity"):
-            per = float(kernel.periodicity)
-            result["parameters"]["periodicity"] = per
-            result["interpretations"]["pattern"] = f"Periodic (period={per:.2f})"
-        
-        # Check if composite
-        if hasattr(kernel, "parts") and kernel.parts:
-            result["is_composite"] = True
-        
-        return result
-    
+
+        self._history.append(state)
+        return state
+
     @staticmethod
-    def _extract_values(param: Any) -> Union[float, List[float], np.ndarray]:
-        """Safely extract values from GPy parameter."""
-        if param is None:
+    def _extract_param_value(param: Any) -> Union[float, np.ndarray]:
+        """Safely extract scalar or array value from GPy parameter."""
+        val = param.param_array
+
+        if val is None:
             return 0.0
-        
-        if hasattr(param, "values"):
-            val = param.values
-        elif hasattr(param, "param_array"):
-            val = param.param_array
-        else:
-            val = param
-        
+
         arr = np.atleast_1d(val)
+
         if len(arr) == 1:
             return float(arr[0])
-        return arr.tolist() if isinstance(arr, np.ndarray) else list(arr)
-    
-    @staticmethod
-    def _is_noise_kernel(kernel: Any) -> bool:
-        """Determine if kernel represents noise."""
-        name = getattr(kernel, 'name', '').lower()
-        return any(n in name for n in ['white', 'noise', 'bias'])
+        else:
+            return arr.copy()
 
+    def wrapped_optimize(
+        self,
+        max_iters: int = 100,
+        callback: Optional[Callable[[Any, int, List[OptimizationState]], None]] = None,
+        capture_every: int = 1,
+        convergence_tolerance: float = 1e-6,
+        patience: int = 10,
+        **optimize_kwargs,
+    ) -> List[OptimizationState]:
+        """
+        Perform optimization with intelligent tracking and early stopping.
+        """
+        if max_iters <= 0:
+            raise ValueError(f"max_iters must be positive, got {max_iters}")
 
-class KernelSummaryFormatter:
-    """Formats kernel summaries for different output formats."""
-    
-    def __init__(self, component: KernelComponent):
-        self.root = component
-    
-    def to_text(self, verbose: bool = True) -> str:
-        """Generate human-readable text summary."""
-        lines = [
-            "\n╔" + "═" * 58 + "╗",
-            "║" + " KERNEL SUMMARY".center(58) + "║",
-            "╚" + "═" * 58 + "╝\n",
-        ]
-        
-        # Configuration
-        lines.append("Configuration:")
-        lines.append(f"  Lengthscale: rapid<{self.root.interpretations.get('lengthscale_rapid', 0.5)}, "
-                    f"smooth>{self.root.interpretations.get('lengthscale_smooth', 2.0)}")
-        lines.append(f"  Variance: very_low<{self.root.interpretations.get('variance_low', 0.01)}, "
-                    f"high>{self.root.interpretations.get('variance_high', 10.0)}\n")
-        
-        # Tree structure
-        lines.append("Structure:")
-        lines.append(self._format_tree(self.root))
-        lines.append("")
-        
-        # Detailed components
-        lines.append("Components:")
-        lines.append(self._format_components(self.root))
-        
-        return "\n".join(lines)
-    
-    def _format_tree(self, component: KernelComponent, prefix: str = "", is_last: bool = True) -> str:
-        """Format tree structure with box-drawing characters."""
-        connector = "└── " if is_last else "├── "
-        line = prefix + connector + component.kernel_type
-        if component.name != component.kernel_type:
-            line += f" ({component.name})"
-        
-        lines = [line]
-        
-        if component.children:
-            new_prefix = prefix + ("    " if is_last else "│   ")
-            for i, child in enumerate(component.children):
-                is_last_child = (i == len(component.children) - 1)
-                lines.append(self._format_tree(child, new_prefix, is_last_child))
-        
-        return "\n".join(lines)
-    
-    def _format_components(self, component: KernelComponent, depth: int = 0) -> str:
-        """Format component details."""
-        lines = []
-        indent = "  " * depth
-        
-        if not component.is_composite or depth == 0:
-            lines.append(f"{indent}【{component.kernel_type}】 {component.path}")
-            for key, val in component.parameters.items():
-                lines.append(f"{indent}  ├─ {key}: {val}")
-            for key, val in component.interpretations.items():
-                lines.append(f"{indent}  └─ {val}")
-            lines.append("")
-        
-        for child in component.children:
-            lines.append(self._format_components(child, depth + 1))
-        
-        return "\n".join(lines)
-    
-    def to_markdown(self) -> str:
-        """Generate Markdown formatted summary."""
-        lines = ["# Kernel Summary\n"]
-        
-        def add_component(comp: KernelComponent, level: int = 2):
-            header = "#" * level
-            lines.append(f"{header} {comp.kernel_type}\n")
-            
-            if comp.parameters:
-                lines.append("| Parameter | Value |")
-                lines.append("|-----------|-------|")
-                for k, v in comp.parameters.items():
-                    lines.append(f"| {k} | {v} |")
-                lines.append("")
-            
-            if comp.interpretations:
-                lines.append("**Interpretations:**")
-                for k, v in comp.interpretations.items():
-                    lines.append(f"- **{k}**: {v}")
-                lines.append("")
-            
-            for child in comp.children:
-                add_component(child, level + 1)
-        
-        add_component(self.root)
-        return "\n".join(lines)
-    
-    def to_json(self, indent: int = 2) -> str:
-        """Generate JSON representation."""
-        return json.dumps(self.root.to_dict(), indent=indent)
+        self._history = []
+        self._start_time = time.perf_counter()
+        best_ll = -np.inf
+        patience_counter = 0
 
+        logger.info(f"Starting tracked optimization: max_iters={max_iters}")
 
-# Register specific kernel interpreters
-@KernelInterpreter.register_kernel("RBF")
-def _interpret_rbf(kernel: Any, config: InterpretationConfig) -> Dict[str, Any]:
-    """Specialized RBF kernel interpretation."""
-    result = {"parameters": {}, "interpretations": {}, "is_composite": False}
-    
-    # RBF-specific: lengthscale is crucial
-    ls = float(kernel.lengthscale)
-    result["parameters"]["lengthscale"] = ls
-    
-    category = config.lengthscale.categorize(ls)
-    if category == SmoothnessCategory.RAPID_VARIATION:
-        advice = "Model will fit noise - consider increasing"
-    elif category == SmoothnessCategory.SMOOTH_TREND:
-        advice = "Model may underfit - consider decreasing"
-    else:
-        advice = "Well-balanced flexibility"
-    
-    result["interpretations"]["smoothness"] = f"{category.describe()}. {advice}"
-    
-    # Variance
-    var = float(kernel.variance)
-    result["parameters"]["variance"] = var
-    var_cat = config.variance.categorize(var)
-    result["interpretations"]["signal_strength"] = var_cat.describe("Signal")
-    
-    return result
+        for i in range(max_iters):
+            try:
+                # Single iteration optimization
+                self.model.optimize(max_iters=1, **optimize_kwargs)
 
+                # Record state based on capture frequency
+                if i % capture_every == 0:
+                    state = self.record_state(iteration=i)
 
-@KernelInterpreter.register_kernel("Linear")
-def _interpret_linear(kernel: Any, config: InterpretationConfig) -> Dict[str, Any]:
-    """Specialized Linear kernel interpretation."""
-    result = {"parameters": {}, "interpretations": {}, "is_composite": False}
-    
-    if hasattr(kernel, "variances"):
-        variances = KernelInterpreter._extract_values(kernel.variances)
-        result["parameters"]["ARD_variances"] = variances
-        active_dims = sum(1 for v in np.atleast_1d(variances) if v > 0.1)
-        result["interpretations"]["relevance"] = (
-            f"Linear trend in {active_dims}/{len(np.atleast_1d(variances))} dimensions"
+                    # Early stopping check based on log-likelihood
+                    if state.log_likelihood is not None:
+                        if state.log_likelihood > best_ll + convergence_tolerance:
+                            best_ll = state.log_likelihood
+                            patience_counter = 0
+                        else:
+                            patience_counter += 1
+
+                        if patience_counter >= patience:
+                            logger.info(
+                                f"Early stopping at iteration {i} "
+                                f"(no improvement for {patience} steps)"
+                            )
+                            break
+
+                # User callback
+                if callback:
+                    try:
+                        callback(self.model, i, self._history)
+                    except Exception as e:
+                        logger.warning(f"User callback failed at iteration {i}: {e}")
+
+            except KeyboardInterrupt:
+                logger.info(f"Optimization interrupted by user at iteration {i}")
+                break
+            except Exception as e:
+                logger.error(f"Optimization failed at iteration {i}: {e}")
+                raise OptimizationError(f"Optimization failed at iteration {i}: {e}") from e
+
+        total_time = time.perf_counter() - self._start_time
+        logger.info(
+            f"Optimization complete: {self.iteration_count} iterations "
+            f"in {total_time:.2f}s"
         )
-    
-    return result
 
+        return self._history
 
-@KernelInterpreter.register_kernel("PeriodicExponential")
-@KernelInterpreter.register_kernel("PeriodicMatern32")
-@KernelInterpreter.register_kernel("PeriodicMatern52")
-def _interpret_periodic(kernel: Any, config: InterpretationConfig) -> Dict[str, Any]:
-    """Specialized periodic kernel interpretation."""
-    result = {"parameters": {}, "interpretations": {}, "is_composite": False}
-    
-    period = float(kernel.periodicity)
-    result["parameters"]["period"] = period
-    result["interpretations"]["pattern"] = f"Repeating pattern every {period:.2f} units"
-    
-    ls = float(kernel.lengthscale)
-    result["parameters"]["decay_lengthscale"] = ls
-    if ls > period * 2:
-        result["interpretations"]["stability"] = "Long-range periodic correlations"
-    else:
-        result["interpretations"]["stability"] = "Local periodic patterns only"
-    
-    return result
+    def get_parameter_trajectory(self, param_name: str) -> Tuple[np.ndarray, np.ndarray]:
+        """
+        Extract time-series data for a specific parameter.
 
+        Args:
+            param_name: Name of parameter to extract
 
-# High-level API functions
-def summarize_kernel(
-    model: Any,
-    X: Optional[np.ndarray] = None,
-    verbose: bool = True,
-    config: Optional[InterpretationConfig] = None,
-    format: str = "text",
-) -> Union[str, Dict[str, Any]]:
-    """
-    Generate comprehensive kernel interpretation.
-    
-    Args:
-        model: GPy model with 'kern' attribute
-        X: Training data (optional, for context-aware scaling)
-        verbose: Print summary if True
-        config: Interpretation configuration
-        format: Output format ('text', 'markdown', 'json', 'dict')
-        
-    Returns:
-        Formatted string or dictionary depending on format
-        
-    Raises:
-        KernelError: If model invalid or kernel uninterpretable
-    """
-    if not hasattr(model, "kern"):
-        raise KernelError("Model must have 'kern' attribute")
-    
-    # Auto-adjust config based on data scale if provided
-    cfg = config or InterpretationConfig()
-    if X is not None:
-        cfg = _adapt_config_to_data(cfg, X)
-    
-    # Build interpretation tree
-    interpreter = KernelInterpreter(cfg)
-    try:
-        root = interpreter.interpret(model.kern)
-    except Exception as e:
-        raise KernelError(f"Failed to interpret kernel: {e}") from e
-    
-    # Format output
-    formatter = KernelSummaryFormatter(root)
-    
-    if format == "dict":
-        return root.to_dict()
-    elif format == "json":
-        result = formatter.to_json()
-    elif format == "markdown":
-        result = formatter.to_markdown()
-    else:  # text
-        result = formatter.to_text()
-    
-    if verbose and format in ("text", "markdown"):
-        print(result)
-    
-    return result
+        Returns:
+            Tuple of (iterations, values)
 
+        Raises:
+            KeyError: If parameter not found
+        """
+        if not self._history:
+            raise TrackingError("No optimization history recorded")
 
-def interpret_lengthscale(
-    lengthscale: Union[float, np.ndarray, List[float]],
-    config: Optional[LengthscaleThresholds] = None,
-    return_category: bool = False,
-) -> Union[str, Tuple[str, SmoothnessCategory]]:
-    """
-    Interpret lengthscale magnitude with data-aware thresholds.
-    
-    Args:
-        lengthscale: Single value or array of lengthscales
-        config: Threshold configuration
-        return_category: If True, return (description, category) tuple
-        
-    Returns:
-        Interpretation string, or tuple if return_category=True
-    """
-    cfg = config or LengthscaleThresholds()
-    
-    # Normalize input
-    if isinstance(lengthscale, (list, np.ndarray)):
-        arr = np.atleast_1d(lengthscale)
-        mean_ls = float(np.mean(arr))
-        range_str = f"[{np.min(arr):.2f}, {np.max(arr):.2f}]"
-        is_ard = len(arr) > 1
-    else:
-        mean_ls = float(lengthscale)
-        range_str = f"{mean_ls:.2f}"
-        is_ard = False
-    
-    category = cfg.categorize(mean_ls)
-    description = category.describe()
-    
-    if is_ard:
-        description += f" (ARD, range: {range_str})"
-    else:
-        description += f" ({range_str})"
-    
-    if return_category:
-        return description, category
-    return description
+        if param_name not in self._param_names:
+            raise KeyError(
+                f"Unknown parameter: {param_name}. " f"Available: {self._param_names}"
+            )
 
+        iterations = np.array([s.iteration for s in self._history])
+        values = np.array([s.parameters[param_name] for s in self._history])
 
-def interpret_variance(
-    variance: float,
-    name: str = "Signal",
-    config: Optional[VarianceThresholds] = None,
-    return_category: bool = False,
-) -> Union[str, Tuple[str, VarianceCategory]]:
-    """
-    Interpret variance magnitude with context-aware messaging.
-    
-    Args:
-        variance: Variance value
-        name: Type of variance ("Signal" or "Noise")
-        config: Threshold configuration
-        return_category: If True, return (description, category) tuple
-        
-    Returns:
-        Interpretation string, or tuple if return_category=True
-    """
-    cfg = config or VarianceThresholds()
-    category = cfg.categorize(variance)
-    description = category.describe(name) + f" (≈{variance:.3f})"
-    
-    if return_category:
-        return description, category
-    return description
+        return iterations, values
 
+    def get_convergence_report(
+        self,
+        window: int = 10,
+        convergence_threshold: float = 0.01,
+    ) -> Dict[str, ConvergenceMetrics]:
+        """
+        Analyze parameter convergence with statistical rigor.
 
-def format_kernel_tree(model: Any, style: str = "unicode") -> str:
-    """
-    Pretty-print kernel tree structure.
-    
-    Args:
-        model: GPy model
-        style: Output style ('unicode', 'ascii', 'minimal')
-        
-    Returns:
-        Formatted tree string
-    """
-    if not hasattr(model, "kern"):
-        raise KernelError("Model must have 'kern' attribute")
-    
-    interpreter = KernelInterpreter()
-    root = interpreter.interpret(model.kern)
-    
-    if style == "minimal":
-        return root.kernel_type
-    
-    # Use formatter's tree rendering
-    formatter = KernelSummaryFormatter(root)
-    # Extract just the tree portion
-    full_text = formatter.to_text(verbose=False)
-    # Find and return just the structure section
-    lines = full_text.split("\n")
-    start_idx = None
-    for i, line in enumerate(lines):
-        if "Structure:" in line:
-            start_idx = i + 1
-        elif start_idx and line.startswith("Components:"):
-            return "\n".join(lines[start_idx:i]).strip()
-    
-    return root.kernel_type
+        Args:
+            window: Number of iterations for convergence analysis
+            convergence_threshold: CV threshold for convergence detection
 
+        Returns:
+            Dictionary mapping parameter names to ConvergenceMetrics
+        """
+        if len(self._history) < window * 2:
+            raise TrackingError(
+                f"Need at least {window * 2} iterations for convergence analysis, "
+                f"got {len(self._history)}"
+            )
 
-def count_kernel_components(model: Any) -> int:
-    """Count total number of kernel components (leaf nodes)."""
-    if not hasattr(model, "kern"):
-        return 0
-    
-    def count_leaves(kernel: Any) -> int:
-        if hasattr(kernel, "parts") and kernel.parts:
-            return sum(count_leaves(k) for k in kernel.parts)
-        return 1
-    
-    return count_leaves(model.kern)
+        self._validate_convergence_window(window, len(self._history))
 
+        report = {}
 
-def extract_kernel_params_flat(model: Any) -> Dict[str, float]:
-    """
-    Extract all kernel parameters as flat dictionary with dotted paths.
-    
-    Args:
-        model: GPy model
-        
-    Returns:
-        Flat dictionary mapping "path.param" to value
-    """
-    if not hasattr(model, "kern"):
-        raise KernelError("Model must have 'kern' attribute")
-    
-    params = {}
-    
-    def extract(kernel: Any, path: str = ""):
-        current_path = f"{path}.{kernel.name}" if path else kernel.name
-        
-        if hasattr(kernel, "parameters"):
-            for param in kernel.parameters:
-                param_path = f"{current_path}.{param.name}"
-                val = KernelInterpreter._extract_values(param)
-                if isinstance(val, list):
-                    for i, v in enumerate(val):
-                        params[f"{param_path}[{i}]"] = float(v)
+        for param_name in self._param_names:
+            # Extract values handling multi-dimensional parameters
+            values = np.array([s.parameters[param_name] for s in self._history])
+
+            # Flatten multi-dimensional for scalar metrics
+            if values.ndim > 1:
+                values = np.linalg.norm(values, axis=1)
+
+            recent = values[-window:]
+            earlier = values[:window]
+
+            initial_mean = float(np.mean(earlier))
+            final_mean = float(np.mean(recent))
+            final_std = float(np.std(recent))
+
+            # Avoid division by zero
+            denom = abs(initial_mean) if initial_mean != 0 else 1e-10
+            relative_change = abs(final_mean - initial_mean) / denom
+
+            cv = final_std / (abs(final_mean) + 1e-10)
+            is_converged = cv < convergence_threshold
+
+            # Trend detection using linear regression
+            if len(values) >= 3:
+                x = np.arange(len(values))
+                slope = np.polyfit(x, values, 1)[0]
+                if abs(slope) < 1e-10:
+                    trend = "stable"
+                elif slope > 0:
+                    trend = "increasing"
                 else:
-                    params[param_path] = float(val)
-        
-        if hasattr(kernel, "parts") and kernel.parts:
-            for i, part in enumerate(kernel.parts):
-                extract(part, current_path)
-    
-    extract(model.kern)
-    return params
+                    trend = "decreasing"
+            else:
+                trend = "unknown"
 
+            report[param_name] = ConvergenceMetrics(
+                initial_mean=initial_mean,
+                final_mean=final_mean,
+                relative_change=relative_change,
+                final_std=final_std,
+                coefficient_of_variation=cv,
+                is_converged=is_converged,
+                trend_direction=trend,
+            )
 
-def get_lengthscale(model: Any, as_dict: bool = False) -> Union[float, Dict[str, float]]:
-    """
-    Extract lengthscale(s) from model kernel.
-    
-    Args:
-        model: GPy model
-        as_dict: Return dictionary with component paths as keys
-        
-    Returns:
-        Single float, array, or dictionary of lengthscales
-    """
-    if not hasattr(model, "kern"):
-        raise KernelError("Model must have 'kern' attribute")
-    
-    if as_dict:
-        result = {}
-        def find_lengthscales(kernel: Any, path: str = ""):
-            current = f"{path}.{kernel.name}" if path else kernel.name
-            if hasattr(kernel, "lengthscale"):
-                result[current] = KernelInterpreter._extract_values(kernel.lengthscale)
-            if hasattr(kernel, "parts") and kernel.parts:
-                for part in kernel.parts:
-                    find_lengthscales(part, current)
-        find_lengthscales(model.kern)
-        return result
-    else:
-        # Return first found lengthscale
-        if hasattr(model.kern, "lengthscale"):
-            val = KernelInterpreter._extract_values(model.kern.lengthscale)
-            return val[0] if isinstance(val, list) else val
-        raise KernelError("Model kernel has no lengthscale attribute")
+        return report
 
+    @staticmethod
+    def _validate_convergence_window(window: int, history_length: int) -> None:
+        """Validate window size for convergence analysis."""
+        if window <= 0:
+            raise ValueError(f"Window must be positive, got {window}")
+        if window > history_length // 2:
+            raise ValueError(
+                f"Window ({window}) too large for history length ({history_length}). "
+                f"Max allowed: {history_length // 2}"
+            )
 
-def get_noise_variance(model: Any) -> float:
-    """Extract noise variance from GP model."""
-    if not hasattr(model, "likelihood"):
-        raise KernelError("Model must have 'likelihood' attribute")
-    try:
-        return float(model.likelihood.variance)
-    except Exception as e:
-        raise KernelError(f"Could not extract noise variance: {e}") from e
+    def detect_optimization_issues(self) -> Dict[str, Any]:
+        """Detect common optimization problems."""
+        issues = {"warnings": [], "recommendations": [], "metrics": {}}
 
+        if not self._history:
+            issues["warnings"].append("No optimization history available")
+            return issues
 
-# Private utilities
-def _adapt_config_to_data(
-    config: InterpretationConfig,
-    X: np.ndarray,
-) -> InterpretationConfig:
-    """
-    Auto-scale thresholds based on data characteristics.
-    
-    Args:
-        config: Base configuration
-        X: Training data (n_samples, n_dims)
-        
-    Returns:
-        Adapted configuration
-    """
-    if X.ndim != 2 or X.shape[0] < 2:
-        return config
-    
-    # Compute data scale
-    ranges = np.ptp(X, axis=0)  # Peak-to-peak (max - min)
-    median_range = float(np.median(ranges[ranges > 0]))
-    
-    if median_range <= 0:
-        return config
-    
-    # Scale thresholds proportionally to data range
-    scale_factor = median_range / 2.0  # Assuming standardized data ~2 range
-    
-    new_ls = LengthscaleThresholds(
-        rapid_variation=config.lengthscale.rapid_variation * scale_factor,
-        smooth_trend=config.lengthscale.smooth_trend * scale_factor,
-    )
-    
-    return InterpretationConfig(
-        lengthscale=new_ls,
-        variance=config.variance,
-    )
+        # Check for NaN/Inf in parameters
+        for state in self._history:
+            for name, val in state.parameters.items():
+                arr = np.atleast_1d(val)
+                if not np.all(np.isfinite(arr)):
+                    issues["warnings"].append(
+                        f"Non-finite values detected in {name} at iteration {state.iteration}"
+                    )
+
+        # Check for oscillation
+        if len(self._history) >= 20:
+            for param_name in self._param_names:
+                _, values = self.get_parameter_trajectory(param_name)
+                recent_std = np.std(values[-10:])
+                overall_range = np.max(values) - np.min(values)
+
+                if overall_range > 0 and recent_std / overall_range > 0.3:
+                    issues["warnings"].append(
+                        f"{param_name} showing high oscillation (no convergence)"
+                    )
+                    issues["recommendations"].append(
+                        f"Consider reducing learning rate for {param_name}"
+                    )
+
+        # Log-likelihood trends
+        lls = [
+            s.log_likelihood for s in self._history if s.log_likelihood is not None
+        ]
+        if len(lls) >= 2:
+            if lls[-1] < lls[0]:
+                issues["warnings"].append("Log-likelihood decreased during optimization")
+                issues["recommendations"].append("Check for numerical instability")
+
+            issues["metrics"]["ll_improvement"] = lls[-1] - lls[0]
+            issues["metrics"]["final_ll"] = lls[-1]
+
+        return issues
+
+    def plot_evolution(
+        self,
+        params: Optional[List[str]] = None,
+        figsize: Optional[Tuple[float, float]] = None,
+        show_convergence: bool = True,
+        show_ll: bool = True,
+        n_cols: int = 2,
+    ) -> "plt.Figure":
+        """
+        Plot parameter trajectories with optional convergence indicators.
+        """
+        from gpclarity.plotting import plot_optimization_trajectory
+
+        if not self._history:
+            raise TrackingError(
+                "No optimization history recorded. " "Run wrapped_optimize() first."
+            )
+
+        return plot_optimization_trajectory(
+            self,
+            params=params,
+            figsize=figsize,
+            show_convergence=show_convergence,
+            show_ll=show_ll,
+            n_cols=n_cols,
+        )
+
+    def to_dataframe(self) -> "pd.DataFrame":
+        """Export history to pandas DataFrame for analysis."""
+        try:
+            import pandas as pd
+        except ImportError as e:
+            raise ImportError(
+                "to_dataframe() requires pandas. Install: pip install pandas"
+            ) from e
+
+        records = []
+        for state in self._history:
+            record = {
+                "iteration": state.iteration,
+                "log_likelihood": state.log_likelihood,
+                "gradient_norm": state.gradient_norm,
+                "timestamp": state.timestamp,
+            }
+            # Flatten parameters
+            for name, val in state.parameters.items():
+                arr = np.atleast_1d(val)
+                if len(arr) == 1:
+                    record[name] = float(arr[0])
+                else:
+                    for i, v in enumerate(arr):
+                        record[f"{name}_{i}"] = float(v)
+            records.append(record)
+
+        return pd.DataFrame(records)
+
+    def __len__(self) -> int:
+        """Return number of recorded states."""
+        return len(self._history)
+
+    def __repr__(self) -> str:
+        """String representation."""
+        status = f"{self.iteration_count} iterations recorded"
+        if self._history:
+            duration = self._history[-1].timestamp - self._history[0].timestamp
+            status += f", {duration:.2f}s duration"
+        return f"<HyperparameterTracker: {status}>"
