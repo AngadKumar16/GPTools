@@ -3,7 +3,7 @@ Model complexity quantification for Gaussian Processes.
 """
 
 import logging
-from typing import Any, Dict
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import GPy
 import numpy as np
