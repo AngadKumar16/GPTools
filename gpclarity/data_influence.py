@@ -9,6 +9,7 @@ import time
 import warnings
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Tuple, Union
+from typing import Union
 
 import GPy
 import numpy as np

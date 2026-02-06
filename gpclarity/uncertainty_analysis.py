@@ -10,7 +10,6 @@ from enum import Enum, auto
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Protocol, Tuple, Union
 
 import numpy as np
-
 from gpclarity.exceptions import UncertaintyError
 from gpclarity.utils import _validate_array
 
