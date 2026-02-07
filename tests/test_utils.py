@@ -49,3 +49,35 @@ class TestUtils:
 
         health = gpclarity.check_model_health(model)
         assert health["healthy"] is False
+
+    def test_check_model_health(self):
+        """Test model health checking."""
+        # Healthy model
+        health = gpclarity.check_model_health(self.model)
+        self.assertTrue(health['is_healthy'])
+        self.assertEqual(len(health['issues']), 0)
+        self.assertIn('log_likelihood', health)
+        
+        # Model without predict
+        bad_model = object()
+        health = gpclarity.check_model_health(bad_model)
+        self.assertFalse(health['is_healthy'])
+        self.assertIn('Model missing predict() method', health['issues'])
+    def test_get_lengthscale(self):
+        """Test lengthscale extraction."""
+        ls = gpclarity.get_lengthscale(self.model)
+        self.assertIsInstance(ls, float)
+        self.assertGreater(ls, 0)
+
+    def test_get_noise_variance(self):
+        """Test noise variance extraction."""
+        noise = gpclarity.get_noise_variance(self.model)
+        self.assertIsInstance(noise, float)
+        self.assertGreaterEqual(noise, 0)
+
+    def test_extract_kernel_params_flat(self):
+        """Test flat parameter extraction."""
+        params = gpclarity.extract_kernel_params_flat(self.model)
+        self.assertIsInstance(params, dict)
+        self.assertGreater(len(params), 0)
+    
