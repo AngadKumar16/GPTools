@@ -39,6 +39,7 @@ if _GPY_AVAILABLE:
         summarize_kernel,
         format_kernel_tree,
         interpret_lengthscale,
+        extract_kernel_params_flat,
         interpret_variance,
     )
     from .uncertainty_analysis import UncertaintyProfiler
@@ -52,7 +53,6 @@ if _GPY_AVAILABLE:
     from .data_influence import DataInfluenceMap
     from .utils import (
         check_model_health,
-        extract_kernel_params_flat,
         get_lengthscale,
         get_noise_variance,
     )
