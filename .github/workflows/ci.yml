@@ -59,7 +59,18 @@ jobs:
         pip install GPy || pip install --no-binary :gpy: GPy
         # ✅ Now install your package normally (no --no-build-isolation)
         pip install -e ".[dev]"
-
+    - name: Debug utils.py on CI  # ADD THIS STEP
+      run: |
+        echo "=== File size ==="
+        wc -l gpclarity/utils.py
+        echo "=== Last 20 lines ==="
+        tail -20 gpclarity/utils.py
+        echo "=== Function grep ==="
+        grep -n "def check_model_health" gpclarity/utils.py || echo "FUNCTION NOT FOUND"
+        echo "=== All exports ==="
+        python -c "import gpclarity.utils; print([x for x in dir(gpclarity.utils) if not x.startswith('_')])"
+        echo "=== gpclarity location ==="
+        python -c "import gpclarity; print(gpclarity.__file__)"
     - name: Run test suite
       run: |
         pytest tests/ \
