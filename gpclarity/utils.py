@@ -409,3 +409,47 @@ def _validate_array(arr: Any, name: str = "array") -> np.ndarray:
         raise ValueError(f"{name} contains {n_invalid} non-finite values")
     
     return arr
+
+def check_model_health(model: Any) -> Dict[str, Union[bool, str, float]]:
+    """
+    Check if GP model is healthy and ready for analysis.
+    
+    Returns:
+        Dictionary with health status and diagnostics
+    """
+    issues = []
+    warnings_list = []
+    
+    # Check basic attributes
+    if not hasattr(model, 'predict'):
+        issues.append("Model missing predict() method")
+    if not hasattr(model, 'kern'):
+        issues.append("Model missing kern attribute")
+        
+    # Check parameters
+    if hasattr(model, 'parameters'):
+        for param in model.parameters:
+            if hasattr(param, 'param_array'):
+                arr = param.param_array
+                if not np.all(np.isfinite(arr)):
+                    issues.append(f"Parameter {param.name} has non-finite values")
+                    
+    # Check log-likelihood
+    ll = None
+    if hasattr(model, 'log_likelihood') and not issues:
+        try:
+            ll = float(model.log_likelihood())
+            if not np.isfinite(ll):
+                warnings_list.append("Log-likelihood is not finite")
+            elif ll > 0:
+                warnings_list.append("Log-likelihood is positive (unusual for regression)")
+        except Exception as e:
+            warnings_list.append(f"Could not compute log-likelihood: {e}")
+    
+    return {
+        'is_healthy': len(issues) == 0,
+        'issues': issues,
+        'warnings': warnings_list,
+        'log_likelihood': ll,
+        'n_parameters': len(model.parameters) if hasattr(model, 'parameters') else 0,
+    }
