@@ -2,7 +2,8 @@
 Visualization utilities for GP interpretability.
 """
 
-from typing import Optional
+from typing import List, Optional, Tuple
+from gpclarity.uncertainty_analysis import UncertaintyRegion
 
 import numpy as np
 

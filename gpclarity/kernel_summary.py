@@ -297,18 +297,30 @@ def count_kernel_components(model: Any) -> int:
     return count_leaves(model.kern)
 
 
+def _extract_values(param: Any) -> Union[float, List[float]]:
+    """Safely extract values from GPy parameter."""
+    if param is None:
+        return 0.0
+    
+    if hasattr(param, "values"):
+        val = param.values
+    elif hasattr(param, "param_array"):
+        val = param.param_array
+    else:
+        val = param
+    
+    arr = np.atleast_1d(val)
+    if len(arr) == 1:
+        return float(arr[0])
+    return arr.tolist() if isinstance(arr, np.ndarray) else list(arr)
+
+
 def extract_kernel_params_flat(model: Any) -> Dict[str, float]:
     """
     Extract all kernel parameters as flat dictionary with dotted paths.
-    
-    Args:
-        model: GPy model
-        
-    Returns:
-        Flat dictionary mapping "path.param" to value
     """
     if not hasattr(model, "kern"):
-        raise KernelError("Model must have 'kern' attribute")
+        raise ValueError("Model must have 'kern' attribute")
     
     params = {}
     
@@ -318,7 +330,7 @@ def extract_kernel_params_flat(model: Any) -> Dict[str, float]:
         if hasattr(kernel, "parameters"):
             for param in kernel.parameters:
                 param_path = f"{current_path}.{param.name}"
-                val = KernelInterpreter._extract_values(param)
+                val = _extract_values(param)
                 if isinstance(val, list):
                     for i, v in enumerate(val):
                         params[f"{param_path}[{i}]"] = float(v)
@@ -336,41 +348,32 @@ def extract_kernel_params_flat(model: Any) -> Dict[str, float]:
 def get_lengthscale(model: Any, as_dict: bool = False) -> Union[float, Dict[str, float]]:
     """
     Extract lengthscale(s) from model kernel.
-    
-    Args:
-        model: GPy model
-        as_dict: Return dictionary with component paths as keys
-        
-    Returns:
-        Single float, array, or dictionary of lengthscales
     """
     if not hasattr(model, "kern"):
-        raise KernelError("Model must have 'kern' attribute")
+        raise ValueError("Model must have 'kern' attribute")
     
     if as_dict:
         result = {}
         def find_lengthscales(kernel: Any, path: str = ""):
             current = f"{path}.{kernel.name}" if path else kernel.name
             if hasattr(kernel, "lengthscale"):
-                result[current] = KernelInterpreter._extract_values(kernel.lengthscale)
+                result[current] = _extract_values(kernel.lengthscale)
             if hasattr(kernel, "parts") and kernel.parts:
                 for part in kernel.parts:
                     find_lengthscales(part, current)
         find_lengthscales(model.kern)
         return result
     else:
-        # Return first found lengthscale
         if hasattr(model.kern, "lengthscale"):
-            val = KernelInterpreter._extract_values(model.kern.lengthscale)
+            val = _extract_values(model.kern.lengthscale)
             return val[0] if isinstance(val, list) else val
-        raise KernelError("Model kernel has no lengthscale attribute")
+        raise ValueError("Model kernel has no lengthscale attribute")
 
 
 def get_noise_variance(model: Any) -> float:
     """Extract noise variance from GP model."""
-    if not hasattr(model, "likelihood"):
-        raise KernelError("Model must have 'likelihood' attribute")
-    try:
+    if hasattr(model, 'Gaussian_noise') and hasattr(model.Gaussian_noise, 'variance'):
+        return float(model.Gaussian_noise.variance)
+    if hasattr(model, 'likelihood') and hasattr(model.likelihood, 'variance'):
         return float(model.likelihood.variance)
-    except Exception as e:
-        raise KernelError(f"Could not extract noise variance: {e}") from e
+    raise ValueError("Could not extract noise variance from model")
